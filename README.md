@@ -43,7 +43,7 @@ pacman -Syu pyadrecon
 ## Usage
 
 ````py
-usage: pyadrecon.py [-h] [--generate-excel-from CSV_DIR] [-dc DOMAIN_CONTROLLER] [-u USERNAME] [-p [PASSWORD]] [-d DOMAIN] [--auth {ntlm,kerberos}] [--tgt-file TGT_FILE] [--tgt-base64 TGT_BASE64]
+usage: pyadrecon.py [-h] [--version] [--generate-excel-from CSV_DIR] [-dc DOMAIN_CONTROLLER] [-u USERNAME] [-p [PASSWORD]] [-d DOMAIN] [--auth {ntlm,kerberos}] [--tgt-file TGT_FILE] [--tgt-base64 TGT_BASE64]
                     [--ssl] [--port PORT] [-o OUTPUT] [--page-size PAGE_SIZE] [--threads THREADS] [--dormant-days DORMANT_DAYS] [--password-age PASSWORD_AGE] [--only-enabled] [--collect COLLECT]
                     [--no-excel] [-v]
 
