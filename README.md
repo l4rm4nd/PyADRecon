@@ -15,30 +15,19 @@ Python3 implementation of an improved [ADRecon](https://github.com/sense-of-secu
 
 ## Installation
 
-Generic:
-
 ````bash
-# clone the repo
-git clone https://github.com/l4rm4nd/PyADRecon && cd PyADRecon
-
-# create virtual environment
-virtualenv venv && source venv/bin/activate
-
-# install dependencies
-pip install -r requirements.txt
-````
-
-[PyPi](https://pypi.org/project/PyADRecon/):
-
-````bash
+# stable release from pypi
 pipx install pyadrecon
+
+# latest commit from github
+pipx install git+https://github.com/l4rm4nd/PyADRecon
 ````
 
-[BlackArch Linux](https://blackarch.org/):
+Then verify installation:
 
-```bash
-pacman -Syu pyadrecon
-```
+````bash
+pyadrecon --version
+````
 
 ## Usage
 
