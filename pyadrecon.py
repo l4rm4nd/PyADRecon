@@ -239,7 +239,7 @@ def format_datetime(dt) -> str:
                 y = dt.year
                 hour12 = dt.hour % 12 or 12
                 ampm = "AM" if dt.hour < 12 else "PM"
-                return f"{m}/{d}/{y} {hour12}:{dt:%M:%S} {ampm}"
+                return f"{m}/{d}/{y} {hour12}:{dt.minute:02d}:{dt.second:02d} {ampm}"
         else:
             return dt.strftime("%-m/%-d/%Y %-I:%M:%S %p")
 
