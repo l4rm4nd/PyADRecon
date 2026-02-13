@@ -2,4 +2,7 @@ ldap3==2.9.1
 openpyxl==3.1.5
 impacket==0.13.0
 gssapi==1.11.1; sys_platform != 'win32'
+
 winkerberos==0.13.0; sys_platform == 'win32'
+# Needed on Windows because hashlib/OpenSSL often has MD4 disabled, but NTLM needs MD4
+pycryptodome==3.23.0; sys_platform == 'win32'

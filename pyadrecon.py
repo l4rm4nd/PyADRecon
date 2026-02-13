@@ -225,10 +225,24 @@ def format_datetime(dt) -> str:
     """
     if dt is None:
         return ""
-    # If it's already a datetime object from ldap3
+
     if isinstance(dt, datetime):
-        # Format as-is in UTC, don't convert timezone
-        return dt.strftime("%-m/%-d/%Y %-I:%M:%S %p")
+        # Linux/macOS support %-m etc. Windows does not.
+        if os.name == "nt":
+            # Windows: %# removes leading zeros on most builds.
+            try:
+                return dt.strftime("%#m/%#d/%Y %#I:%M:%S %p")
+            except ValueError:
+                # Fallback: build without platform-specific flags
+                m = dt.month
+                d = dt.day
+                y = dt.year
+                hour12 = dt.hour % 12 or 12
+                ampm = "AM" if dt.hour < 12 else "PM"
+                return f"{m}/{d}/{y} {hour12}:{dt:%M:%S} {ampm}"
+        else:
+            return dt.strftime("%-m/%-d/%Y %-I:%M:%S %p")
+
     return ""
 
 
@@ -823,35 +837,41 @@ class PyADRecon:
                             return False
                     # Obtain Kerberos ticket using kinit if password provided
                     elif self.config.password:
-                        logger.info(f"Obtaining Kerberos ticket for {user_principal}...")
-                        try:
-                            # Use kinit to obtain ticket with password
-                            kinit_proc = subprocess.Popen(
-                                ['kinit', user_principal],
-                                stdin=subprocess.PIPE,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                text=True
-                            )
-                            stdout, stderr = kinit_proc.communicate(input=self.config.password + '\n', timeout=10)
-                            
-                            if kinit_proc.returncode != 0:
-                                logger.error(f"Failed to obtain Kerberos ticket: {stderr.strip()}")
-                                logger.error("Make sure Kerberos is configured (/etc/krb5.conf) and KDC is reachable")
+                        if sys.platform == "win32":
+                            # Windows does not ship kinit; rely on SSPI / existing tickets
+                            logger.info("Windows detected: skipping kinit. Kerberos on Windows uses existing logon-session tickets (SSPI).")
+                            logger.info("Run `klist` to verify you have a ticket. If not, log on to the domain or use `runas /netonly` and run PyADRecon from that shell.")
+                            logger.info("Note: Kerberos requires a hostname (SPN). Use the DC hostname/FQDN instead of an IP with -dc.")
+                            # Do not return False here; proceed to SASL bind and let it fail with a useful error if no creds/SPN
+                        else:
+                            logger.info(f"Obtaining Kerberos ticket for {user_principal}...")
+                            try:
+                                kinit_proc = subprocess.Popen(
+                                    ['kinit', user_principal],
+                                    stdin=subprocess.PIPE,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    text=True
+                                )
+                                stdout, stderr = kinit_proc.communicate(input=self.config.password + '\n', timeout=10)
+
+                                if kinit_proc.returncode != 0:
+                                    logger.error(f"Failed to obtain Kerberos ticket: {stderr.strip()}")
+                                    logger.error("Make sure Kerberos is configured (/etc/krb5.conf) and KDC is reachable")
+                                    return False
+
+                                logger.info("Successfully obtained Kerberos ticket")
+                            except FileNotFoundError:
+                                logger.error("kinit command not found. Install Kerberos client: apt install krb5-user (Debian/Ubuntu) or yum install krb5-workstation (RHEL/CentOS)")
                                 return False
-                            
-                            logger.info("Successfully obtained Kerberos ticket")
-                        except FileNotFoundError:
-                            logger.error("kinit command not found. Install Kerberos client: apt install krb5-user (Debian/Ubuntu) or yum install krb5-workstation (RHEL/CentOS)")
-                            return False
-                        except subprocess.TimeoutExpired:
-                            logger.error("kinit timed out. Kerberos port (88/TCP) may be blocked by firewall")
-                            logger.error(f"Check with: nmap -p 88 {self.config.domain_controller}")
-                            logger.error("Use NTLM authentication instead: remove --auth kerberos")
-                            return False
-                        except Exception as e:
-                            logger.error(f"Error obtaining Kerberos ticket: {e}")
-                            return False
+                            except subprocess.TimeoutExpired:
+                                logger.error("kinit timed out. Kerberos port (88/TCP) may be blocked by firewall")
+                                logger.error(f"Check with: nmap -p 88 {self.config.domain_controller}")
+                                logger.error("Use NTLM authentication instead: remove --auth kerberos")
+                                return False
+                            except Exception as e:
+                                logger.error(f"Error obtaining Kerberos ticket: {e}")
+                                return False
                     
                     self.conn = Connection(
                         server,
@@ -4813,7 +4833,7 @@ class PyADRecon:
     def collect_about(self) -> List[Dict]:
         """Collect metadata about the PyADRecon run."""
         logger.info("[-] Collecting About PyADRecon...")
-        results = []
+        results: List[Dict] = []
 
         try:
             # Calculate execution time
@@ -4821,27 +4841,68 @@ class PyADRecon:
             duration = end_time - self.start_time
             duration_secs = duration.total_seconds()
 
-            # Get computer name where script is running
+            # Get computer name where script is running (robust on Windows)
+            import os
             import platform
-            local_computer = platform.node()
-            
-            # Try to determine computer type by searching AD
+            import socket
+
+            local_computer = (
+                socket.gethostname().strip()
+                or os.environ.get("COMPUTERNAME", "").strip()
+                or platform.node().strip()
+            )
+
             computer_type = "Non-Domain System"
+
+            # Try to determine computer type by searching AD
             try:
-                # Try to find the computer in AD
-                comp_entries = self.search(
-                    self.base_dn,
-                    f"(&(objectCategory=computer)(dNSHostName={local_computer}*))",
-                    ['dNSHostName', 'operatingSystem']
-                )
+                candidates = []
+                if local_computer:
+                    candidates.append(local_computer)
+
+                    # If it's not an FQDN, try appending the target domain
+                    if "." not in local_computer and self.base_dn:
+                        target_fqdn = dn_to_fqdn(self.base_dn)
+                        if target_fqdn:
+                            candidates.append(f"{local_computer}.{target_fqdn}")
+
+                comp_entries = None
+                for cand in candidates:
+                    # Prefer dNSHostName matches
+                    comp_entries = self.search(
+                        self.base_dn,
+                        f"(&(objectCategory=computer)(|(dNSHostName={cand})(dNSHostName={cand}*)))",
+                        ['dNSHostName', 'operatingSystem']
+                    )
+                    if comp_entries:
+                        break
+
+                    # Fallback to CN/name for NetBIOS-style hostnames
+                    comp_entries = self.search(
+                        self.base_dn,
+                        f"(&(objectCategory=computer)(|(cn={cand})(name={cand})))",
+                        ['dNSHostName', 'operatingSystem']
+                    )
+                    if comp_entries:
+                        break
+
                 if comp_entries:
-                    os_name = get_attr(comp_entries[0], 'operatingSystem', '')
+                    os_name = get_attr(comp_entries[0], 'operatingSystem', '') or ''
                     if 'Server' in os_name:
                         computer_type = "Domain Member Server"
                     else:
                         computer_type = "Domain Member Workstation"
-            except:
+
+                    # Prefer displaying the AD dNSHostName if present
+                    ad_hostname = get_attr(comp_entries[0], 'dNSHostName', '') or ''
+                    if ad_hostname:
+                        local_computer = ad_hostname
+
+            except Exception:
                 pass
+
+            if not local_computer:
+                local_computer = "Unknown Host"
 
             results.append({"Category": "PyADRecon Version", "Value": VERSION})
             results.append({"Category": "Date", "Value": self.start_time.strftime("%m.%d.%Y %H:%M")})
@@ -4857,6 +4918,7 @@ class PyADRecon:
         self.results['AboutPyADRecon'] = results
         logger.info(f"    Found {len(results)} metadata items")
         return results
+
 
     def run(self):
         """Run the AD reconnaissance."""
@@ -6836,10 +6898,10 @@ Examples:
         print("[!] Use --generate-excel-from for standalone Excel generation from CSV files")
         sys.exit(1)
     
-    # Check password requirement (not needed if using TGT)
-    if not args.password and not args.tgt_file and not args.tgt_base64:
-        print("[!] Error: Either -p (password), --tgt-file, or --tgt-base64 is required")
-        sys.exit(1)
+    if args.auth == "ntlm":
+        if not args.password:
+            print("[!] Error: -p (password) is required for NTLM authentication")
+            sys.exit(1)
     
     # Auto-enable Kerberos authentication if TGT is provided
     if (args.tgt_file or args.tgt_base64) and args.auth != 'kerberos':
