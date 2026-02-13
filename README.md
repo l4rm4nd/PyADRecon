@@ -29,7 +29,7 @@ Then verify installation:
 pyadrecon --version
 ````
 
-> [TIP]
+> [!TIP]
 > For Windows, a standalone executable is provided. Look [here](https://github.com/l4rm4nd/PyADRecon/tree/main/windows).
 
 ## Usage
