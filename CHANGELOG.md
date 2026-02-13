@@ -1,3 +1,10 @@
+## [0.11.9](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.8...v0.11.9) (2026-02-13)
+
+
+### Bug Fixes
+
+* timeformat for windows ([514da45](https://github.com/l4rm4nd/PyADRecon/commit/514da4502ce4ce683c18e4aae189508c5a0df753))
+
 ## [0.11.8](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.7...v0.11.8) (2026-02-13)
 
 
@@ -26,11 +33,4 @@
 ### Bug Fixes
 
 * inject correct version into release ([931afb6](https://github.com/l4rm4nd/PyADRecon/commit/931afb6733a5300caf3d164bec996982b9fdd8d0))
-
-## [0.11.4](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.3...v0.11.4) (2026-02-12)
-
-
-### Bug Fixes
-
-* pull latest changes before release ([9e10cac](https://github.com/l4rm4nd/PyADRecon/commit/9e10cacb7076f788693afc17aaa648fd7c32f149))
 
