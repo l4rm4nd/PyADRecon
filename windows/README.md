@@ -1,98 +1,128 @@
 # PyADRecon on Windows
 
-This guide explains how to run **PyADRecon** on Windows, either via the provided **`pyadrecon.exe`** or locally via **Python** (and how to build your own `.exe`).
+A guide for running **PyADRecon** on Windows systems using either the pre-built executable or Python.
 
 ---
 
-## Quick Start (pyadrecon.exe)
+## Table of Contents
 
-If you use the provided `pyadrecon.exe`, you can run it directly (no Python required).
-
-### NTLM example
-
-```powershell
-.\pyadrecon.exe -dc 10.10.10.10 -d vulnad.local -u john -p "P@ssw0rd"
-```
-
-### Kerberos (SSPI) example
-
-Kerberos on Windows requires:
-- DC **hostname/FQDN** (not IP)
-- Existing tickets in the current logon session (`klist`)
-
-```powershell
-.\pyadrecon.exe -dc dc1.vulnad.local -d vulnad.local -u john --auth kerberos
-```
-
----
-
-## Kerberos Tickets on Windows (SSPI)
-
-### Check existing tickets
-
-```powershell
-klist
-```
-
-If you see `krbtgt/<REALM>` (example: `krbtgt/VULNAD.LOCAL`), you have a TGT.
-
-### Unjoined computer (recommended workflow)
-
-If your Windows machine is **not** domain-joined, create a logon session with domain credentials:
-
-```powershell
-runas.exe /netonly /noprofile /user:VULNAD\john "powershell.exe -ep bypass"
-```
-
-In the new PowerShell window, request Kerberos tickets by accessing a domain resource:
-
-```powershell
-dir \\dc1.vulnad.local\NETLOGON
-klist
-```
-
-Now run PyADRecon from the same window:
-
-```powershell
-.\pyadrecon.exe -dc dc1.vulnad.local -d vulnad.local -u john --auth kerberos
-```
+- [Requirements](#requirements)
+- [Quick Start](#quick-start)
+- [Installation Methods](#installation-methods)
+  - [Using Pre-built Executable](#using-pre-built-executable)
+  - [Running with Python](#running-with-python)
+  - [Building Your Own Executable](#building-your-own-executable)
+- [Output](#output)
+- [Troubleshooting](#troubleshooting)
+- [Help](#help)
 
 ---
 
 ## Requirements
 
-- Windows 10/11 / Windows Server
-- Network access to the Domain Controller:
-  - LDAP: `389/TCP`
-  - LDAPS: `636/TCP` (recommended)
-  - Kerberos: `88/TCP` + `88/UDP` (required for Kerberos auth)
-  - DNS: `53/TCP` + `53/UDP` (required for reliable AD name resolution / Kerberos SPNs)
-- Working DNS resolution for the DC hostname/FQDN (Kerberos requires SPNs like `ldap/dc1.vulnad.local`)
-- Time sync within a few minutes between client and DC (Kerberos is time-sensitive)
+### System Requirements
+- Windows 10/11 or Windows Server
+- Python 3.11 (x64) - only if running from source
+
+### Network Requirements
+
+The following ports must be accessible on the Domain Controller:
+
+| Service | Port | Protocol | Required For |
+|---------|------|----------|--------------|
+| LDAP | 389 | TCP | Unencrypted LDAP (as fall-back) |
+| LDAPS | 636 | TCP | Encrypted LDAP (recommended) |
+| Kerberos | 88 | TCP/UDP | Kerberos authentication |
+| DNS | 53 | TCP/UDP | Name resolution / Kerberos SPNs |
+
+### Additional Requirements
+- Working DNS resolution for DC hostname/FQDN
+- Time synchronization between client and DC (within a few minutes for Kerberos)
 
 ---
 
-## Run locally with Python (for development / custom builds)
+## Quick Start
 
-### CAUTION
+### Using the pre-built executable
+
+#### NTLM Authentication
+```powershell
+.\pyadrecon.exe -dc 10.10.10.10 -d vulnad.local -u john -p "P@ssw0rd"
+```
+
+> [!NOTE]
+> NTLM authentication works with DC IP addresses or hostnames.
+
+#### Kerberos Authentication
+```powershell
+.\pyadrecon.exe -dc dc1.vulnad.local -d vulnad.local -u john --auth kerberos
+```
+
+> [!WARNING]
+> Kerberos authentication requires:
+> - DC hostname or FQDN (not IP address)
+> - Valid Kerberos ticket in the current logon session
+
+**Check for existing tickets:**
+
+```powershell
+klist
+```
+
+Look for `krbtgt/<REALM>` (e.g., `krbtgt/VULNAD.LOCAL`) to confirm you have a TGT.
+
+**Workflow for non-domain-joined computers:**
+
+If your Windows machine is **not** domain-joined, follow these steps:
+
+1. Create a logon session with domain credentials:
+```powershell
+runas.exe /netonly /noprofile /user:VULNAD\john "powershell.exe -ep bypass"
+```
+
+2. In the new PowerShell window, request Kerberos tickets:
+```powershell
+dir \\dc1.vulnad.local\NETLOGON
+klist
+```
+
+3. Run PyADRecon from the same window:
+```powershell
+.\pyadrecon.exe -dc dc1.vulnad.local -d vulnad.local -u john --auth kerberos
+```
+
+---
+
+## Installation Methods
+
+### Using Pre-built Executable
+
+No installation required. Simply download and run `pyadrecon.exe`.
+
+See [Quick Start](#quick-start) for usage examples.
+
+---
+
+### Running with Python
+
+For development, testing, or custom builds.
 
 > [!CAUTION]
-> Antivirus / EDR solutions may flag **impacket** (and tools that include it).  
-> If you run locally for development/testing, do so in a controlled environment and with appropriate approvals.
+> Antivirus/EDR solutions may flag **impacket** and related tools. Only run in controlled environments with appropriate approvals.
 
-### Installation
-
-#### 1) Install Python
-
-Install Python 3.11 (x64) and verify:
+#### Step 1: Install Python
 
 ```powershell
 winget install -e --id Python.Python.3.11
+```
+
+Verify installation:
+```powershell
 py -V
 py -V:3.11 -c "import sys; print(sys.version)"
 ```
 
-#### 2) Clone the repository
+#### Step 2: Clone the repository
 
 ```powershell
 cd C:\Temp
@@ -100,7 +130,7 @@ git clone https://github.com/l4rm4nd/PyADRecon.git
 cd PyADRecon
 ```
 
-#### 3) Create and activate a virtual environment
+#### Step 3: Create virtual environment
 
 ```powershell
 py -V:3.11 -m venv .venv
@@ -108,119 +138,126 @@ py -V:3.11 -m venv .venv
 python -m pip install -U pip setuptools wheel
 ```
 
-#### 4) Install dependencies
+#### Step 4: Install dependencies
 
 Using `requirements.txt`:
-
 ```powershell
 python -m pip install -r .\requirements.txt
 ```
 
-Or install from `pyproject.toml`:
-
+Or from `pyproject.toml`:
 ```powershell
 python -m pip install .
 ```
 
 > [!CAUTION]
-> Antivirus / EDR solutions may flag **impacket** and brick the installation.  
+> Antivirus/EDR may block the installation of **impacket**.
 
-### Run (Python)
+#### Step 5: Run PyADRecon
 
-NTLM:
-
+**NTLM:**
 ```powershell
 python .\pyadrecon.py -dc 10.10.10.10 -d vulnad.local -u john -p "P@ssw0rd"
 ```
 
-Kerberos (SSPI):
-
+**Kerberos:**
 ```powershell
 python .\pyadrecon.py -dc dc1.vulnad.local -d vulnad.local -u john --auth kerberos
 ```
 
 ---
 
-## Build your own pyadrecon.exe (PyInstaller)
+### Building Your Own Executable
 
-### 1) Install PyInstaller
+Use PyInstaller to create a standalone executable.
+
+#### Step 1: Install PyInstaller
 
 ```powershell
 .\.venv\Scripts\activate
 python -m pip install -U pyinstaller
 ```
 
-### 2) Build
-
-Single-file executable:
+#### Step 2: Build the executable
 
 ```powershell
 pyinstaller --onefile --name pyadrecon --clean pyadrecon.py
 ```
 
-Output:
+#### Step 3: Test the executable
 
-- `dist\pyadrecon.exe`
-
-Test:
+Output location: `dist\pyadrecon.exe`
 
 ```powershell
 .\dist\pyadrecon.exe --help
-```
----
-
-## Common Pitfalls
-
-### Kerberos fails when using an IP address
-
-Kerberos requires an SPN for the DC hostname (example: `ldap/dc1.vulnad.local`). Use:
-
-```powershell
-.\pyadrecon.exe -dc dc1.vulnad.local -d vulnad.local -u john --auth kerberos
-```
-
-(or the same with `python .\pyadrecon.py ...`)
-
-### No tickets in `klist`
-
-Trigger ticket acquisition:
-
-```powershell
-dir \\dc1.vulnad.local\NETLOGON
-klist
-```
-
-### DNS resolution
-
-If `dc1.vulnad.local` does not resolve, fix DNS (use AD DNS/DC) or add a hosts entry:
-
-`C:\Windows\System32\drivers\etc\hosts`
-
-```text
-10.10.10.10 dc1.vulnad.local dc1
 ```
 
 ---
 
 ## Output
 
-PyADRecon creates an output directory like:
+PyADRecon generates a timestamped output directory:
 
-- `PyADRecon-Report-YYYYMMDDHHMMSS\`
+```
+PyADRecon-Report-YYYYMMDDHHMMSS\
+```
 
-It writes:
+Contents:
+- CSV files for each module
+- Excel report (unless `--no-excel` is specified)
 
-- CSV files per module
-- An Excel report (unless `--no-excel` is set)
+---
+
+## Troubleshooting
+
+### Kerberos fails when using an IP address
+
+**Problem:** Kerberos requires an SPN based on the DC hostname (e.g., `ldap/dc1.vulnad.local`).
+
+**Solution:** Use the DC hostname or FQDN instead of an IP address:
+```powershell
+.\pyadrecon.exe -dc dc1.vulnad.local -d vulnad.local -u john --auth kerberos
+```
+
+---
+
+### No tickets in `klist`
+
+**Problem:** No Kerberos tickets are cached.
+
+**Solution:** Trigger ticket acquisition by accessing a domain resource:
+```powershell
+dir \\dc1.vulnad.local\NETLOGON
+klist
+```
+
+---
+
+### DNS resolution fails
+
+**Problem:** The DC hostname does not resolve.
+
+**Solutions:**
+
+1. Configure your DNS to use the AD DNS server/DC
+2. Add a hosts file entry:
+
+Edit `C:\Windows\System32\drivers\etc\hosts`:
+```text
+10.10.10.10 dc1.vulnad.local dc1
+```
 
 ---
 
 ## Help
 
-Show all options:
+Display all available options:
 
 ```powershell
 .\pyadrecon.exe --help
-# or
+```
+
+Or with Python:
+```powershell
 python .\pyadrecon.py --help
 ```
