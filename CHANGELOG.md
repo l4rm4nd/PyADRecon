@@ -1,3 +1,10 @@
+## [0.11.8](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.7...v0.11.8) (2026-02-13)
+
+
+### Bug Fixes
+
+* support windows and provide executable ([3d68b5a](https://github.com/l4rm4nd/PyADRecon/commit/3d68b5a46e27d9457a416f81ed21e02cceac7d63))
+
 ## [0.11.7](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.6...v0.11.7) (2026-02-12)
 
 
@@ -26,11 +33,4 @@
 ### Bug Fixes
 
 * pull latest changes before release ([9e10cac](https://github.com/l4rm4nd/PyADRecon/commit/9e10cacb7076f788693afc17aaa648fd7c32f149))
-
-## [0.11.3](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.2...v0.11.3) (2026-02-12)
-
-
-### Bug Fixes
-
-* add --version cli flag ([734ab1b](https://github.com/l4rm4nd/PyADRecon/commit/734ab1bee51637096d55ee67ed5fa1917938f5b9))
 
