@@ -2,6 +2,9 @@
 
 A guide for running **PyADRecon** on Windows systems using either the pre-built executable or Python.
 
+>[!CAUTION]
+>PyADRecon.py as well as the standalone executable may be flagged by AV/EDR software.
+
 ---
 
 ## Table of Contents
