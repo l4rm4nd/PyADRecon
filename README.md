@@ -105,14 +105,7 @@ Examples:
 >[!WARNING]
 >If LDAP channel binding is enabled, this script will fail with `automatic bind not successful - strongerAuthRequired`, as ldap3 does not support it (see [here](https://github.com/cannatag/ldap3/issues/1049#issuecomment-1222826803)). You must use Kerberos authentication instead.
 >
->If you use Kerberos auth, please create a valid `/etc/krb5.conf` and DC hostname entry in `/etc/hosts`. May read [this](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=32628#KerberosClientConfiguration-*NIX/etc/krb5.confConfiguration).
->
->Note that you can provide an already existing TGT ticket to the script via `--tgt-file` or `--tgt-base64`. For example, obtained by Netexec via `netexec smb <TARGET> <ARGS> --generate-tgt <FILEMAME>`.
-
->[!NOTE]
->PyADRecon uses an **empty workstation name by default** (like Impacket/NetExec), which bypasses `userWorkstations` restrictions automatically. This means accounts restricted to specific computers will work without any special flags!
->
->If needed, you can explicitly spoof a workstation name using `--workstation <name>` flag during NTLM authentication.
+>If you use Kerberos auth under Linux, please create a valid `/etc/krb5.conf` and DC hostname entry in `/etc/hosts`. May read [this](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=32628#KerberosClientConfiguration-*NIX/etc/krb5.confConfiguration). If you are on Windows, please make sure you have valid Kerberos tickets. May read [this](https://github.com/l4rm4nd/PyADRecon/tree/main/windows#kerberos-authentication). Note that you can provide an already existing TGT ticket to the script via `--tgt-file` or `--tgt-base64`. For example, obtained by Netexec via `netexec smb <TARGET> <ARGS> --generate-tgt <FILEMAME>`.
 
 ## Docker
 
