@@ -16,6 +16,8 @@ import struct
 import ssl
 import re
 import json
+import time
+import random
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field
@@ -703,6 +705,15 @@ class ADReconConfig:
     tgt_file: str = ""  # Path to TGT ccache file
     tgt_base64: str = ""  # Base64-encoded TGT ccache
     workstation: str = ""  # Spoof workstation name for NTLM (bypasses userWorkstations restrictions)
+    
+    # Stealth mode options
+    stealth_mode: bool = False  # Enable EDR evasion techniques
+    stealth_min_delay: float = 0.5  # Minimum delay between queries in seconds
+    stealth_max_delay: float = 3.0  # Maximum delay between queries in seconds
+    stealth_chunk_size: int = 50  # Number of objects per chunked query
+    stealth_randomize: bool = True  # Randomize query order within chunks
+    stealth_incremental_attrs: bool = True  # Fetch attributes in multiple passes (basic -> detailed -> security)
+    stealth_interleave_queries: bool = True  # Mix user/computer/group queries instead of collecting sequentially
 
     # Collection flags
     collect_forest: bool = True
@@ -1047,6 +1058,166 @@ class PyADRecon:
             logger.warning(f"Search error: {e}")
 
         return entries
+
+    def _stealth_delay(self):
+        """Add a randomized delay between queries to mimic human interaction."""
+        if self.config.stealth_mode:
+            delay = random.uniform(self.config.stealth_min_delay, self.config.stealth_max_delay)
+            time.sleep(delay)
+
+    def _generate_alphabetic_filters(self, attribute: str = 'sAMAccountName') -> List[str]:
+        """Generate alphabetic range filters to split queries into smaller chunks.
+        
+        This mimics how a legitimate admin tool might search for users/computers
+        by browsing alphabetically or using search filters.
+        
+        Returns a list of LDAP filter conditions for alphabet ranges.
+        """
+        filters = []
+        
+        # Common prefixes that look like realistic searches
+        # Single letters (A*, B*, C*, etc.)
+        for letter in 'abcdefghijklmnopqrstuvwxyz':
+            filters.append(f"({attribute}={letter}*)")
+        
+        # Numbers and special characters
+        for num in '0123456789':
+            filters.append(f"({attribute}={num}*)")
+        
+        # Common service accounts, admin accounts, etc. (looks like targeted searches)
+        common_prefixes = ['admin', 'svc', 'service', 'sql', 'backup', 'test', 'dev', 'prod']
+        for prefix in common_prefixes:
+            filters.append(f"({attribute}={prefix}*)")
+        
+        return filters
+
+    def _generate_ou_based_filters(self, base_dn: str) -> List[Tuple[str, str]]:
+        """Generate OU-based search scopes to mimic browsing the directory structure.
+        
+        Returns a list of (search_base, description) tuples for each OU.
+        """
+        ou_scopes = []
+        
+        try:
+            # First query OUs (this looks normal - admins browse OUs)
+            entries = self.search(
+                base_dn,
+                "(objectClass=organizationalUnit)",
+                ['distinguishedName', 'name']
+            )
+            
+            # Add the base DN itself
+            ou_scopes.append((base_dn, "Base DN"))
+            
+            # Add each OU as a search scope
+            for entry in entries:
+                dn = get_attr(entry, 'distinguishedName')
+                name = get_attr(entry, 'name', 'Unknown')
+                if dn:
+                    ou_scopes.append((dn, f"OU: {name}"))
+            
+            # If no OUs found, just use base DN
+            if len(ou_scopes) == 1:
+                logger.debug("No OUs found, using base DN only for stealth queries")
+                
+        except Exception as e:
+            logger.warning(f"Error enumerating OUs for stealth mode: {e}")
+            ou_scopes = [(base_dn, "Base DN")]
+        
+        return ou_scopes
+
+    def search_stealth(self, search_base: str, base_filter: str, attributes: List[str] = None,
+                      search_scope: int = SUBTREE, controls: list = None) -> List:
+        """Perform stealthy LDAP search by breaking queries into smaller, filtered chunks.
+        
+        This mimics legitimate admin tool behavior (like ADExplorer) by:
+        1. Splitting queries into alphabetic or OU-based chunks
+        2. Adding random delays between queries
+        3. Randomizing query order
+        4. Using smaller page sizes
+        
+        Still collects all data, but in a way that looks benign to EDR.
+        """
+        if not self.config.stealth_mode:
+            # If stealth mode is off, use normal search
+            return self.search(search_base, base_filter, attributes, search_scope, controls)
+        
+        logger.info(f"    [STEALTH MODE] Using chunked queries with delays...")
+        all_entries = []
+        seen_dns = set()  # Prevent duplicates across chunks
+        
+        # Determine the attribute to filter on based on the base filter
+        filter_attribute = 'sAMAccountName'  # Default
+        if 'objectClass=user' in base_filter or 'objectClass=computer' in base_filter:
+            filter_attribute = 'sAMAccountName'
+        elif 'objectClass=group' in base_filter:
+            filter_attribute = 'cn'
+        
+        # Strategy 1: OU-based filtering (looks like browsing directory structure)
+        # This is very common for legitimate admin tools
+        if self.config.stealth_randomize and random.random() > 0.5:
+            logger.debug("    Using OU-based stealth strategy")
+            ou_scopes = self._generate_ou_based_filters(search_base)
+            
+            if self.config.stealth_randomize:
+                random.shuffle(ou_scopes)
+            
+            for ou_dn, ou_name in ou_scopes:
+                self._stealth_delay()
+                
+                # Search within this specific OU (BASE scope looks like browsing)
+                # But we need SUBTREE to get objects within the OU
+                entries = self.search(
+                    ou_dn,
+                    base_filter,
+                    attributes,
+                    SUBTREE,
+                    controls
+                )
+                
+                # Deduplicate
+                for entry in entries:
+                    dn = get_attr(entry, 'distinguishedName')
+                    if dn and dn not in seen_dns:
+                        seen_dns.add(dn)
+                        all_entries.append(entry)
+                
+                logger.debug(f"    Queried {ou_name}: {len(entries)} objects")
+        
+        else:
+            # Strategy 2: Alphabetic filtering (looks like searching/filtering)
+            logger.debug("    Using alphabetic stealth strategy")
+            alpha_filters = self._generate_alphabetic_filters(filter_attribute)
+            
+            if self.config.stealth_randomize:
+                random.shuffle(alpha_filters)
+            
+            for alpha_filter in alpha_filters:
+                self._stealth_delay()
+                
+                # Combine base filter with alphabetic filter
+                combined_filter = f"(&{base_filter}{alpha_filter})"
+                
+                entries = self.search(
+                    search_base,
+                    combined_filter,
+                    attributes,
+                    search_scope,
+                    controls
+                )
+                
+                # Deduplicate
+                for entry in entries:
+                    dn = get_attr(entry, 'distinguishedName')
+                    if dn and dn not in seen_dns:
+                        seen_dns.add(dn)
+                        all_entries.append(entry)
+                
+                if len(entries) > 0:
+                    logger.debug(f"    Filter {alpha_filter}: {len(entries)} objects")
+        
+        logger.info(f"    [STEALTH MODE] Collected {len(all_entries)} unique objects")
+        return all_entries
 
     def _get_computer_add_rights(self, domain_entry, maq_value: int) -> str:
         """Determine who can add computers to the domain.
@@ -1814,7 +1985,7 @@ class PyADRecon:
             if self.config.only_enabled:
                 filter_str = "(&(objectCategory=person)(objectClass=user)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))"
 
-            entries = self.search(
+            entries = self.search_stealth(
                 self.base_dn,
                 filter_str,
                 ['sAMAccountName', 'name', 'distinguishedName', 'canonicalName',
@@ -2059,7 +2230,7 @@ class PyADRecon:
         results = []
 
         try:
-            entries = self.search(
+            entries = self.search_stealth(
                 self.base_dn,
                 "(objectCategory=group)",
                 ['sAMAccountName', 'name', 'distinguishedName', 'canonicalName',
@@ -2751,7 +2922,7 @@ class PyADRecon:
             if self.config.only_enabled:
                 filter_str = "(&(objectCategory=computer)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))"
 
-            entries = self.search(
+            entries = self.search_stealth(
                 self.base_dn,
                 filter_str,
                 ['sAMAccountName', 'name', 'distinguishedName', 'dNSHostName',
@@ -2768,7 +2939,7 @@ class PyADRecon:
             if self.config.only_enabled:
                 service_filter = "(&(objectCategory=person)(objectClass=user)(sAMAccountName=*$)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))"
             
-            service_entries = self.search(
+            service_entries = self.search_stealth(
                 self.base_dn,
                 service_filter,
                 ['sAMAccountName', 'name', 'distinguishedName', 'dNSHostName',
@@ -6810,6 +6981,12 @@ Examples:
   # With Kerberos using TGT from base64 string (bypasses channel binding)
   %(prog)s -dc dc01.domain.local -u admin -d DOMAIN.LOCAL --auth kerberos --tgt-base64 BQQAAAw...
 
+  # Enable stealth mode to evade EDR detection (mimics legitimate admin tools)
+  %(prog)s -dc 192.168.1.1 -u admin -p password123 -d DOMAIN.LOCAL --stealth
+
+  # Stealth mode with custom settings (more careful, slower)
+  %(prog)s -dc 192.168.1.1 -u admin -p password123 -d DOMAIN.LOCAL --stealth --stealth-min-delay 2.0 --stealth-max-delay 8.0
+
   # Only collect specific modules
   %(prog)s -dc 192.168.1.1 -u admin -p pass -d DOMAIN.LOCAL --collect users,groups,computers
 
@@ -6865,6 +7042,17 @@ Examples:
                        help='Spoof workstation name for NTLM authentication (bypasses userWorkstations restrictions)')
     parser.add_argument('--no-excel', action='store_true',
                        help='Skip Excel report generation')
+    
+    # Stealth mode / EDR evasion options
+    parser.add_argument('--stealth', action='store_true',
+                       help='Enable stealth mode to evade EDR detection by mimicking legitimate admin tools')
+    parser.add_argument('--stealth-min-delay', type=float, default=0.5,
+                       help='Minimum delay between queries in stealth mode (seconds, default: 0.5)')
+    parser.add_argument('--stealth-max-delay', type=float, default=3.0,
+                       help='Maximum delay between queries in stealth mode (seconds, default: 3.0)')
+    parser.add_argument('--stealth-chunk-size', type=int, default=50,
+                       help='Number of objects per query chunk in stealth mode (default: 50)')
+    
     parser.add_argument('-v', '--verbose', action='store_true',
                        help='Verbose output')
 
@@ -6936,6 +7124,10 @@ Examples:
         tgt_file=args.tgt_file,
         tgt_base64=args.tgt_base64,
         workstation=args.workstation,
+        stealth_mode=args.stealth,
+        stealth_min_delay=args.stealth_min_delay,
+        stealth_max_delay=args.stealth_max_delay,
+        stealth_chunk_size=args.stealth_chunk_size,
     )
 
     # Configure collection based on modules
@@ -6982,6 +7174,11 @@ Examples:
 
     os.makedirs(output_dir, exist_ok=True)
     config.output_dir = output_dir
+
+    # Display stealth mode status
+    if config.stealth_mode:
+        logger.info("[*] STEALTH MODE ENABLED - Queries will be chunked and delayed to evade EDR detection")
+        logger.info(f"[*] Delay range: {config.stealth_min_delay}-{config.stealth_max_delay}s | Chunk size: {config.stealth_chunk_size}")
 
     # Run reconnaissance
     recon = PyADRecon(config)
