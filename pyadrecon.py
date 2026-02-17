@@ -1219,6 +1219,157 @@ class PyADRecon:
         logger.info(f"    [STEALTH MODE] Collected {len(all_entries)} unique objects")
         return all_entries
 
+    def _merge_entry_attributes(self, base_entry, additional_entry):
+        """Merge attributes from additional_entry into base_entry."""
+        if not additional_entry:
+            return base_entry
+        
+        # Copy all attributes from additional_entry to base_entry
+        for attr_name in additional_entry.entry_attributes:
+            if attr_name not in base_entry.entry_attributes:
+                base_entry[attr_name] = additional_entry[attr_name]
+        
+        return base_entry
+
+    def search_stealth_incremental(self, search_base: str, base_filter: str, 
+                                   all_attributes: List[str], 
+                                   search_scope: int = SUBTREE, 
+                                   controls: list = None) -> List:
+        """Perform stealthy search with incremental attribute collection.
+        
+        Mimics how a human admin would explore AD objects:
+        1. First pass: Basic identification (name, DN, type)
+        2. Second pass: Account details (dates, status)
+        3. Third pass: Security-sensitive attributes (SPNs, delegation, admin rights)
+        
+        This looks much more legitimate than requesting all 25+ attributes at once.
+        """
+        if not self.config.stealth_mode or not self.config.stealth_incremental_attrs:
+            # If incremental attributes disabled, use regular stealth search
+            return self.search_stealth(search_base, base_filter, all_attributes, search_scope, controls)
+        
+        logger.info(f"    [STEALTH MODE] Using incremental attribute collection (3 passes)...")
+        
+        # Categorize attributes into phases (mimics human exploration pattern)
+        basic_attrs = [
+            'distinguishedName', 'canonicalName', 'name', 'sAMAccountName', 
+            'cn', 'objectClass', 'objectCategory', 'description'
+        ]
+        
+        account_attrs = [
+            'userAccountControl', 'pwdLastSet', 'lastLogonTimestamp', 
+            'accountExpires', 'whenCreated', 'whenChanged', 'lockoutTime',
+            'badPasswordTime', 'badPwdCount', 'logonCount'
+        ]
+        
+        security_attrs = [
+            'adminCount', 'servicePrincipalName', 'msDS-AllowedToDelegateTo',
+            'msDS-SupportedEncryptionTypes', 'objectSid', 'sIDHistory',
+            'primaryGroupID', 'memberOf', 'member', 'ntSecurityDescriptor'
+        ]
+        
+        # Organize requested attributes into phases
+        phase1_attrs = [attr for attr in all_attributes if attr in basic_attrs or attr == '*']
+        phase2_attrs = [attr for attr in all_attributes if attr in account_attrs]
+        phase3_attrs = [attr for attr in all_attributes if attr in security_attrs]
+        
+        # Add any remaining attributes to phase 2 (general attributes)
+        remaining_attrs = [attr for attr in all_attributes 
+                          if attr not in phase1_attrs + phase2_attrs + phase3_attrs]
+        phase2_attrs.extend(remaining_attrs)
+        
+        # Always include DN in phase 1 for merging
+        if 'distinguishedName' not in phase1_attrs:
+            phase1_attrs.insert(0, 'distinguishedName')
+        
+        # Phase 1: Basic identification (looks like initial browsing)
+        logger.debug(f"    Phase 1: Fetching {len(phase1_attrs)} basic attributes...")
+        phase1_entries = self.search_stealth(search_base, base_filter, phase1_attrs, search_scope, controls)
+        
+        # Build DN-to-entry mapping
+        entry_map = {}
+        for entry in phase1_entries:
+            dn = get_attr(entry, 'distinguishedName')
+            if dn:
+                entry_map[dn] = entry
+        
+        logger.debug(f"    Phase 1: Collected {len(entry_map)} objects")
+        
+        if not entry_map:
+            return []
+        
+        # Phase 2: Account details (looks like checking account status)
+        if phase2_attrs:
+            logger.debug(f"    Phase 2: Fetching {len(phase2_attrs)} account attributes...")
+            # Add DN to phase 2 for correlation
+            phase2_attrs_query = ['distinguishedName'] + [a for a in phase2_attrs if a != 'distinguishedName']
+            
+            self._stealth_delay()  # Delay between phases
+            phase2_entries = self.search_stealth(search_base, base_filter, phase2_attrs_query, search_scope, controls)
+            
+            # Merge phase 2 attributes into existing entries
+            for entry in phase2_entries:
+                dn = get_attr(entry, 'distinguishedName')
+                if dn and dn in entry_map:
+                    entry_map[dn] = self._merge_entry_attributes(entry_map[dn], entry)
+            
+            logger.debug(f"    Phase 2: Merged attributes for {len(phase2_entries)} objects")
+        
+        # Phase 3: Security-sensitive attributes (looks like security audit)
+        if phase3_attrs:
+            logger.debug(f"    Phase 3: Fetching {len(phase3_attrs)} security attributes...")
+            # Add DN to phase 3 for correlation
+            phase3_attrs_query = ['distinguishedName'] + [a for a in phase3_attrs if a != 'distinguishedName']
+            
+            self._stealth_delay()  # Delay between phases
+            phase3_entries = self.search_stealth(search_base, base_filter, phase3_attrs_query, search_scope, controls)
+            
+            # Merge phase 3 attributes into existing entries
+            for entry in phase3_entries:
+                dn = get_attr(entry, 'distinguishedName')
+                if dn and dn in entry_map:
+                    entry_map[dn] = self._merge_entry_attributes(entry_map[dn], entry)
+            
+            logger.debug(f"    Phase 3: Merged attributes for {len(phase3_entries)} objects")
+        
+        # Return merged entries
+        final_entries = list(entry_map.values())
+        logger.info(f"    [STEALTH MODE] Incremental collection complete: {len(final_entries)} objects with all attributes")
+        return final_entries
+
+    def collect_interleaved(self):
+        """Collect users, computers, and groups in a randomized interleaved order.
+        
+        Instead of the predictable pattern:
+          - All users → All computers → All groups
+        
+        Randomize to:
+          - Computers → Users → Groups (or any other order)
+        
+        This makes the collection pattern less predictable and more like
+        ad-hoc admin browsing rather than systematic enumeration.
+        """
+        logger.info("[-] [STEALTH MODE] Collecting principal objects in interleaved order...")
+        
+        # Build list of collection tasks
+        tasks = []
+        if self.config.collect_users:
+            tasks.append(('users', self.collect_users))
+        if self.config.collect_computers:
+            tasks.append(('computers', self.collect_computers))
+        if self.config.collect_groups:
+            tasks.append(('groups', self.collect_groups))
+        
+        # Randomize the order
+        if self.config.stealth_randomize:
+            random.shuffle(tasks)
+            logger.debug(f"    Randomized collection order: {' → '.join([t[0] for t in tasks])}")
+        
+        # Execute in randomized order with delays
+        for task_name, task_func in tasks:
+            self._stealth_delay()  # Delay between different object type collections
+            task_func()
+
     def _get_computer_add_rights(self, domain_entry, maq_value: int) -> str:
         """Determine who can add computers to the domain.
         
@@ -1985,7 +2136,7 @@ class PyADRecon:
             if self.config.only_enabled:
                 filter_str = "(&(objectCategory=person)(objectClass=user)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))"
 
-            entries = self.search_stealth(
+            entries = self.search_stealth_incremental(
                 self.base_dn,
                 filter_str,
                 ['sAMAccountName', 'name', 'distinguishedName', 'canonicalName',
@@ -2230,7 +2381,7 @@ class PyADRecon:
         results = []
 
         try:
-            entries = self.search_stealth(
+            entries = self.search_stealth_incremental(
                 self.base_dn,
                 "(objectCategory=group)",
                 ['sAMAccountName', 'name', 'distinguishedName', 'canonicalName',
@@ -2922,7 +3073,7 @@ class PyADRecon:
             if self.config.only_enabled:
                 filter_str = "(&(objectCategory=computer)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))"
 
-            entries = self.search_stealth(
+            entries = self.search_stealth_incremental(
                 self.base_dn,
                 filter_str,
                 ['sAMAccountName', 'name', 'distinguishedName', 'dNSHostName',
@@ -2939,7 +3090,7 @@ class PyADRecon:
             if self.config.only_enabled:
                 service_filter = "(&(objectCategory=person)(objectClass=user)(sAMAccountName=*$)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))"
             
-            service_entries = self.search_stealth(
+            service_entries = self.search_stealth_incremental(
                 self.base_dn,
                 service_filter,
                 ['sAMAccountName', 'name', 'distinguishedName', 'dNSHostName',
@@ -5131,41 +5282,80 @@ class PyADRecon:
         if self.config.collect_dcs:
             self.collect_domain_controllers()
 
-        if self.config.collect_users:
-            self.collect_users()
+        # Use interleaved collection for users, computers, groups when stealth mode is enabled
+        if self.config.stealth_mode and self.config.stealth_interleave_queries:
+            # Call interleaved collection (handles users, computers, groups)
+            self.collect_interleaved()
+        else:
+            # Normal sequential collection
+            if self.config.collect_users:
+                self.collect_users()
 
-        if self.config.collect_user_spns:
-            self.collect_user_spns()
+            if self.config.collect_user_spns:
+                self.collect_user_spns()
 
-        if self.config.collect_groups:
-            self.collect_groups()
+            if self.config.collect_groups:
+                self.collect_groups()
 
-        if self.config.collect_group_members:
-            self.collect_group_members()
+            if self.config.collect_group_members:
+                self.collect_group_members()
 
-        if self.config.collect_ous:
-            self.collect_ous()
+            # OUs, GPOs, DNS, printers collected normally
+            if self.config.collect_ous:
+                self.collect_ous()
 
-        if self.config.collect_gpos:
-            self.collect_gpos()
+            if self.config.collect_gpos:
+                self.collect_gpos()
 
-        if self.config.collect_gplinks:
-            self.collect_gplinks()
+            if self.config.collect_gplinks:
+                self.collect_gplinks()
 
-        if self.config.collect_dns_zones:
-            self.collect_dns_zones()
+            if self.config.collect_dns_zones:
+                self.collect_dns_zones()
 
-        if self.config.collect_dns_records:
-            self.collect_dns_records()
+            if self.config.collect_dns_records:
+                self.collect_dns_records()
 
-        if self.config.collect_printers:
-            self.collect_printers()
+            if self.config.collect_printers:
+                self.collect_printers()
 
-        if self.config.collect_computers:
-            self.collect_computers()
+            if self.config.collect_computers:
+                self.collect_computers()
 
-        if self.config.collect_computer_spns:
-            self.collect_computer_spns()
+            if self.config.collect_computer_spns:
+                self.collect_computer_spns()
+
+        # These collections run regardless of interleaving
+        # (they're run after interleaved collection completes if enabled)
+        if self.config.stealth_mode and self.config.stealth_interleave_queries:
+            # User SPNs, group members collected after interleaved collection
+            if self.config.collect_user_spns:
+                self.collect_user_spns()
+
+            if self.config.collect_group_members:
+                self.collect_group_members()
+
+            # OUs, GPOs, DNS, printers
+            if self.config.collect_ous:
+                self.collect_ous()
+
+            if self.config.collect_gpos:
+                self.collect_gpos()
+
+            if self.config.collect_gplinks:
+                self.collect_gplinks()
+
+            if self.config.collect_dns_zones:
+                self.collect_dns_zones()
+
+            if self.config.collect_dns_records:
+                self.collect_dns_records()
+
+            if self.config.collect_printers:
+                self.collect_printers()
+
+            if self.config.collect_computer_spns:
+                self.collect_computer_spns()
 
         if self.config.collect_laps:
             self.collect_laps()
