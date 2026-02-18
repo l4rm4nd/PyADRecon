@@ -1,8 +1,11 @@
 <img src="https://raw.githubusercontent.com/l4rm4nd/PyADRecon/refs/heads/main/.github/pyadrecon.png" alt="pyadrecon" width="300"/>
 
-Python3 implementation of an improved [ADRecon](https://github.com/sense-of-security/ADRecon) for Pentesters, Red and Blue Teams
+Python3 implementation of an improved [ADRecon](https://github.com/sense-of-security/ADRecon) for Pentesters and Blue Teams. 
 
 > ADRecon is a tool which gathers information about MS Active Directory and generates an XSLX report to provide a holistic picture of the current state of the target AD environment.
+
+> [!TIP]
+> If you are a Red Team, may check out [ADRecon-ADWS](https://github.com/l4rm4nd/PyADRecon-ADWS) instead.
 
 ## Table of Contents
 
