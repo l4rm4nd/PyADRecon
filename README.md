@@ -165,7 +165,7 @@ Though, you can freely select your own collection of modules to run:
 - `passwordpolicy` ✅
 - `fgpp` or `finegrainedpasswordpolicy` 🛑
 - `laps` 🛑
-- `bitlocker` 🛑
+- `bitlocker` 🛑💥
 
 **Managed Service Accounts**
 - `gmsa` or `groupmanagedserviceaccounts` ✅💥
