@@ -1,3 +1,10 @@
+## [0.11.12](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.11...v0.11.12) (2026-02-19)
+
+
+### Bug Fixes
+
+* add forest_root_dn attribute to track forest root separately ([818acc8](https://github.com/l4rm4nd/PyADRecon/commit/818acc8ce3bb26c1dd05ddd5b763cd8da7282339))
+
 ## [0.11.11](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.10...v0.11.11) (2026-02-19)
 
 
@@ -25,12 +32,4 @@
 ### Bug Fixes
 
 * support windows and provide executable ([3d68b5a](https://github.com/l4rm4nd/PyADRecon/commit/3d68b5a46e27d9457a416f81ed21e02cceac7d63))
-
-## [0.11.7](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.6...v0.11.7) (2026-02-12)
-
-
-### Bug Fixes
-
-* trigger ci ([96d940f](https://github.com/l4rm4nd/PyADRecon/commit/96d940f30ee59ce374e87123f4e08d7e3479e494))
-* version in release, tag and pypi ([9503eeb](https://github.com/l4rm4nd/PyADRecon/commit/9503eeb225ed8d619114986f64f730939c2debe3))
 
