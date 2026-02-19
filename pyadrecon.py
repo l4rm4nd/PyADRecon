@@ -3677,7 +3677,11 @@ class PyADRecon:
                                 # Check if ObjectType is present (ACE_OBJECT_TYPE_PRESENT = 0x1)
                                 try:
                                     ace_data = ace['Ace']
-                                    flags = ace_data.get('Flags', 0)
+                                    # Try to access Flags field directly
+                                    try:
+                                        flags = ace_data['Flags']
+                                    except (KeyError, TypeError):
+                                        flags = 0
                                     # If no ObjectType GUID (flags & 0x1 == 0), it applies to ALL properties
                                     if not (flags & 0x1):
                                         has_generic_write_property = True
@@ -4241,6 +4245,10 @@ class PyADRecon:
                     if risk_level not in ['CRITICAL', 'HIGH']:
                         risk_level = 'HIGH'
                     risk_factors.append('ESC4: Low-privileged owner can modify template')
+                
+                # If no ESC vulnerabilities and no risk factors, set risk level to None
+                if not esc_vulns and not risk_factors:
+                    risk_level = 'None'
                     
                 # Format enrollment and write permissions
                 enroll_perms_str = '; '.join(enrollment_principals) if enrollment_principals else 'None'
