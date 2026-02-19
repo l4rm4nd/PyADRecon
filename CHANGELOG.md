@@ -1,3 +1,10 @@
+## [0.11.11](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.10...v0.11.11) (2026-02-19)
+
+
+### Bug Fixes
+
+* ace parsing errors ([20bc72f](https://github.com/l4rm4nd/PyADRecon/commit/20bc72f3ee97b40fa396030b9e49ea2a504740ef))
+
 ## [0.11.10](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.9...v0.11.10) (2026-02-19)
 
 
@@ -26,11 +33,4 @@
 
 * trigger ci ([96d940f](https://github.com/l4rm4nd/PyADRecon/commit/96d940f30ee59ce374e87123f4e08d7e3479e494))
 * version in release, tag and pypi ([9503eeb](https://github.com/l4rm4nd/PyADRecon/commit/9503eeb225ed8d619114986f64f730939c2debe3))
-
-## [0.11.6](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.5...v0.11.6) (2026-02-12)
-
-
-### Bug Fixes
-
-* trigger ci ([2956985](https://github.com/l4rm4nd/PyADRecon/commit/29569850faba0930663359c27c2dcd7c90041839))
 
