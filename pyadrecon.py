@@ -746,6 +746,7 @@ class PyADRecon:
         self.base_dn: str = ""
         self.config_dn: str = ""
         self.schema_dn: str = ""
+        self.forest_root_dn: str = ""
         self.domain_sid: str = ""
         self.results: Dict[str, List] = {}
         self.start_time: datetime = datetime.now()
@@ -1005,6 +1006,23 @@ class PyADRecon:
                     self.schema_dn = str(info.other['schemaNamingContext'][0])
                 if 'defaultNamingContext' in info.other:
                     self.base_dn = str(info.other['defaultNamingContext'][0])
+
+        # For child domains, derive forest root DN (Configuration/Schema are forest-wide)
+        forest_root_dn = self.base_dn
+        if self.base_dn:
+            dn_parts = [part.strip() for part in self.base_dn.split(',') if part.strip().startswith('DC=')]
+            if len(dn_parts) >= 3:  # Child domain detected
+                forest_root_dn = ','.join(dn_parts[1:])
+                logger.info(f"[*] Child domain detected - using forest root DN: {forest_root_dn}")
+
+        # Store forest root DN for use in forest-wide queries
+        self.forest_root_dn = forest_root_dn
+
+        # Fallback for config/schema if RootDSE didn't provide them
+        if not self.config_dn:
+            self.config_dn = f"CN=Configuration,{forest_root_dn}"
+        if not self.schema_dn:
+            self.schema_dn = f"CN=Schema,{self.config_dn}"
 
         logger.info(f"Base DN: {self.base_dn}")
         logger.info(f"Config DN: {self.config_dn}")
@@ -2381,7 +2399,7 @@ class PyADRecon:
             search_bases = [
                 self.base_dn,
                 f"DC=DomainDnsZones,{self.base_dn}",
-                f"DC=ForestDnsZones,{self.base_dn}",
+                f"DC=ForestDnsZones,{self.forest_root_dn}",
             ]
 
             for search_base in search_bases:
