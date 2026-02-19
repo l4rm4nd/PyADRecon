@@ -1,3 +1,10 @@
+## [0.11.13](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.12...v0.11.13) (2026-02-19)
+
+
+### Bug Fixes
+
+* forest-child enumeration and sid resolving ([10637ff](https://github.com/l4rm4nd/PyADRecon/commit/10637ff68929c00b06df058b3720e26a20975774))
+
 ## [0.11.12](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.11...v0.11.12) (2026-02-19)
 
 
@@ -25,11 +32,4 @@
 ### Bug Fixes
 
 * timeformat for windows ([514da45](https://github.com/l4rm4nd/PyADRecon/commit/514da4502ce4ce683c18e4aae189508c5a0df753))
-
-## [0.11.8](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.7...v0.11.8) (2026-02-13)
-
-
-### Bug Fixes
-
-* support windows and provide executable ([3d68b5a](https://github.com/l4rm4nd/PyADRecon/commit/3d68b5a46e27d9457a416f81ed21e02cceac7d63))
 
