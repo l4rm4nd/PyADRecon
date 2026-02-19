@@ -95,7 +95,7 @@ if not KERBEROS_AVAILABLE:
 
 
 # Constants
-VERSION = "v0.11.12"  # Automatically updated by CI/CD pipeline during release
+VERSION = "v0.11.11"  # Automatically updated by CI/CD pipeline during release
 BANNER = f"""
 ╔═════════════════════════════════════════════════════════
 ║  PyADRecon {VERSION} - Python AD Reconnaissance Tool      
@@ -1195,7 +1195,8 @@ class PyADRecon:
                 ['*']
             )
 
-            forest_name = dn_to_fqdn(self.base_dn)
+            # Use forest root DN (not current domain's base_dn) for forest name
+            forest_name = dn_to_fqdn(self.forest_root_dn if hasattr(self, 'forest_root_dn') else self.base_dn)
             forest_fl = 0
             
             if entries:
@@ -1213,11 +1214,17 @@ class PyADRecon:
                 if naming_entries:
                     naming_owner = get_attr(naming_entries[0], 'fSMORoleOwner', '')
                     if naming_owner:
-                        # Extract DC name from DN
+                        # Extract DC FQDN from DN: CN=NTDS Settings,CN=DC1,CN=Servers,CN=Site,... -> DC1.domain.local
                         parts = str(naming_owner).split(',')
                         if len(parts) > 1:
-                            dc_name = parts[1].replace('CN=', '')
-                            results.append({"Category": "Domain Naming Master", "Value": f"{dc_name.lower()}.{forest_name}"})
+                            dc_name = parts[1].replace('CN=', '').strip()
+                            # Extract domain DN from the DN path
+                            domain_dn_parts = [p for p in parts if p.strip().upper().startswith('DC=')]
+                            if domain_dn_parts:
+                                domain_fqdn = dn_to_fqdn(','.join(domain_dn_parts))
+                                results.append({"Category": "Domain Naming Master", "Value": f"{dc_name.lower()}.{domain_fqdn}"})
+                            else:
+                                results.append({"Category": "Domain Naming Master", "Value": f"{dc_name.lower()}.{forest_name}"})
             except:
                 pass
             
@@ -1229,8 +1236,14 @@ class PyADRecon:
                     if schema_owner:
                         parts = str(schema_owner).split(',')
                         if len(parts) > 1:
-                            dc_name = parts[1].replace('CN=', '')
-                            results.append({"Category": "Schema Master", "Value": f"{dc_name.lower()}.{forest_name}"})
+                            dc_name = parts[1].replace('CN=', '').strip()
+                            # Extract domain DN from the DN path
+                            domain_dn_parts = [p for p in parts if p.strip().upper().startswith('DC=')]
+                            if domain_dn_parts:
+                                domain_fqdn = dn_to_fqdn(','.join(domain_dn_parts))
+                                results.append({"Category": "Schema Master", "Value": f"{dc_name.lower()}.{domain_fqdn}"})
+                            else:
+                                results.append({"Category": "Schema Master", "Value": f"{dc_name.lower()}.{forest_name}"})
             except:
                 pass
 
@@ -4011,7 +4024,8 @@ class PyADRecon:
         return results
     
     def _resolve_sid_to_name(self, sid: str) -> str:
-        """Resolve a SID to a readable name (user/group) with caching."""
+        """Resolve a SID to a readable name (user/group) with caching.
+        Handles cross-domain SIDs in forest environments."""
         # Check cache first
         if sid in self._sid_cache:
             return self._sid_cache[sid]
@@ -4037,7 +4051,51 @@ class PyADRecon:
             self._sid_cache[sid] = result
             return result
         
-        # Try to resolve from domain
+        # Well-known RIDs (work with any domain SID)
+        well_known_rids = {
+            '498': 'Enterprise Read-only Domain Controllers',
+            '500': 'Administrator',
+            '501': 'Guest',
+            '502': 'KRBTGT',
+            '512': 'Domain Admins',
+            '513': 'Domain Users',
+            '514': 'Domain Guests',
+            '515': 'Domain Computers',
+            '516': 'Domain Controllers',
+            '517': 'Cert Publishers',
+            '518': 'Schema Admins',
+            '519': 'Enterprise Admins',
+            '520': 'Group Policy Creator Owners',
+            '521': 'Read-only Domain Controllers',
+            '522': 'Cloneable Domain Controllers',
+            '525': 'Protected Users',
+            '526': 'Key Admins',
+            '527': 'Enterprise Key Admins',
+            '553': 'RAS and IAS Servers',
+            '571': 'Allowed RODC Password Replication Group',
+            '572': 'Denied RODC Password Replication Group',
+        }
+        
+        # Check if this is a domain SID with a well-known RID
+        if sid.startswith('S-1-5-21-'):
+            parts = sid.split('-')
+            if len(parts) >= 8:
+                rid = parts[-1]
+                if rid in well_known_rids:
+                    # Check if it's from a different domain
+                    sid_domain = '-'.join(parts[:7])  # S-1-5-21-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx
+                    current_domain = self.domain_sid if hasattr(self, 'domain_sid') and self.domain_sid else None
+                    
+                    if current_domain and sid_domain != current_domain:
+                        # Cross-domain SID - mark it as from another domain
+                        result = f"[Foreign Domain] {well_known_rids[rid]}"
+                    else:
+                        result = well_known_rids[rid]
+                    
+                    self._sid_cache[sid] = result
+                    return result
+        
+        # Try to resolve from current domain
         try:
             # Search for the object by objectSid
             entries = self.search(
@@ -4066,7 +4124,37 @@ class PyADRecon:
                 self._sid_cache[sid] = result
                 return result
         except Exception as e:
-            logger.debug(f"Could not resolve SID {sid}: {e}")
+            logger.debug(f"Could not resolve SID {sid} in current domain: {e}")
+        
+        # If not found in current domain and we're in a child domain, try forest root
+        if hasattr(self, 'forest_root_dn') and self.forest_root_dn != self.base_dn:
+            try:
+                entries = self.search(
+                    self.forest_root_dn,
+                    f"(objectSid={sid})",
+                    ['sAMAccountName', 'cn', 'distinguishedName', 'objectClass'],
+                    search_scope=SUBTREE
+                )
+                
+                if entries:
+                    entry = entries[0]
+                    sam_name = get_attr(entry, 'sAMAccountName', '')
+                    cn_name = get_attr(entry, 'cn', '')
+                    obj_classes = get_attr(entry, 'objectClass', [])
+                    
+                    if 'computer' in obj_classes:
+                        result = f"[Computer] {sam_name or cn_name}"
+                    elif 'group' in obj_classes:
+                        result = f"[Group] {sam_name or cn_name}"
+                    elif 'user' in obj_classes:
+                        result = f"[User] {sam_name or cn_name}"
+                    else:
+                        result = sam_name or cn_name
+                    
+                    self._sid_cache[sid] = result
+                    return result
+            except Exception as e:
+                logger.debug(f"Could not resolve SID {sid} in forest root: {e}")
         
         # Return SID if resolution failed
         result = f"[SID] {sid}"
