@@ -3485,7 +3485,7 @@ class PyADRecon:
             entries = self.search(
                 self.schema_dn,
                 "(objectCategory=*)",
-                ['name', 'objectClass', 'whenCreated', 'whenChanged'],
+                ['name', 'objectClass', 'whenCreated', 'whenChanged', 'distinguishedName'],
             )
 
             for entry in entries:
