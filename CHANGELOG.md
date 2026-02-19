@@ -1,3 +1,10 @@
+## [0.11.10](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.9...v0.11.10) (2026-02-19)
+
+
+### Bug Fixes
+
+* add missing distinguished name ([2efe17a](https://github.com/l4rm4nd/PyADRecon/commit/2efe17a3e25415679e743c621874c6bf07df83fa))
+
 ## [0.11.9](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.8...v0.11.9) (2026-02-13)
 
 
@@ -26,11 +33,4 @@
 ### Bug Fixes
 
 * trigger ci ([2956985](https://github.com/l4rm4nd/PyADRecon/commit/29569850faba0930663359c27c2dcd7c90041839))
-
-## [0.11.5](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.4...v0.11.5) (2026-02-12)
-
-
-### Bug Fixes
-
-* inject correct version into release ([931afb6](https://github.com/l4rm4nd/PyADRecon/commit/931afb6733a5300caf3d164bec996982b9fdd8d0))
 
