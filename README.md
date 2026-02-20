@@ -33,7 +33,7 @@ pyadrecon --version
 ````
 
 > [!TIP]
-> For Windows, a standalone executable is provided. Look [here](https://github.com/l4rm4nd/PyADRecon/tree/main/windows).
+> For Windows, may read [this](https://github.com/l4rm4nd/PyADRecon/tree/main/windows). NTLM + Kerberos supported.
 
 ## Usage
 
