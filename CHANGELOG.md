@@ -1,3 +1,10 @@
+## [0.11.14](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.13...v0.11.14) (2026-02-20)
+
+
+### Bug Fixes
+
+* initialize sid mappings earlier to support individual --collect adcs runs ([b036a8f](https://github.com/l4rm4nd/PyADRecon/commit/b036a8fde34eae88cb14e570f9feb92a4a0e0fb3))
+
 ## [0.11.13](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.12...v0.11.13) (2026-02-19)
 
 
@@ -25,11 +32,4 @@
 ### Bug Fixes
 
 * add missing distinguished name ([2efe17a](https://github.com/l4rm4nd/PyADRecon/commit/2efe17a3e25415679e743c621874c6bf07df83fa))
-
-## [0.11.9](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.8...v0.11.9) (2026-02-13)
-
-
-### Bug Fixes
-
-* timeformat for windows ([514da45](https://github.com/l4rm4nd/PyADRecon/commit/514da4502ce4ce683c18e4aae189508c5a0df753))
 
