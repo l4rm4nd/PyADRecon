@@ -1,3 +1,10 @@
+## [0.12.3](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.2...v0.12.3) (2026-02-21)
+
+
+### Bug Fixes
+
+* add krbtgt rotation and protected users group to dashboard ([03e3046](https://github.com/l4rm4nd/PyADRecon/commit/03e30466f1f1f9033e0aa3341dba7521f855a62e))
+
 ## [0.12.2](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.1...v0.12.2) (2026-02-21)
 
 
@@ -25,11 +32,4 @@
 ### Bug Fixes
 
 * initialize sid mappings earlier to support individual --collect adcs runs ([b036a8f](https://github.com/l4rm4nd/PyADRecon/commit/b036a8fde34eae88cb14e570f9feb92a4a0e0fb3))
-
-## [0.11.13](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.12...v0.11.13) (2026-02-19)
-
-
-### Bug Fixes
-
-* forest-child enumeration and sid resolving ([10637ff](https://github.com/l4rm4nd/PyADRecon/commit/10637ff68929c00b06df058b3720e26a20975774))
 
