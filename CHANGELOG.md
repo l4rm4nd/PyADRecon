@@ -1,3 +1,10 @@
+## [0.12.2](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.1...v0.12.2) (2026-02-21)
+
+
+### Bug Fixes
+
+* Update Dockerfile ([783e6ea](https://github.com/l4rm4nd/PyADRecon/commit/783e6eab3f3396107f52c1183a135efaa5766561))
+
 ## [0.12.1](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.0...v0.12.1) (2026-02-21)
 
 
@@ -25,11 +32,4 @@
 ### Bug Fixes
 
 * forest-child enumeration and sid resolving ([10637ff](https://github.com/l4rm4nd/PyADRecon/commit/10637ff68929c00b06df058b3720e26a20975774))
-
-## [0.11.12](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.11...v0.11.12) (2026-02-19)
-
-
-### Bug Fixes
-
-* add forest_root_dn attribute to track forest root separately ([818acc8](https://github.com/l4rm4nd/PyADRecon/commit/818acc8ce3bb26c1dd05ddd5b763cd8da7282339))
 
