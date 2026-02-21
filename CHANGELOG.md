@@ -1,3 +1,10 @@
+## [0.12.11](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.10...v0.12.11) (2026-02-21)
+
+
+### Bug Fixes
+
+* update footer ([a60f604](https://github.com/l4rm4nd/PyADRecon/commit/a60f604a82ea0c5f0c8b7889c0a87af901256d75))
+
 ## [0.12.10](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.9...v0.12.10) (2026-02-21)
 
 
@@ -25,11 +32,4 @@
 ### Bug Fixes
 
 * add laps readers to table and adjust maq text ([2586914](https://github.com/l4rm4nd/PyADRecon/commit/25869149ce6a8c16923b3cace2bcb0e1e5db5025))
-
-## [0.12.6](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.5...v0.12.6) (2026-02-21)
-
-
-### Bug Fixes
-
-* hide non-issue tiles and add maq finding ([9929546](https://github.com/l4rm4nd/PyADRecon/commit/9929546c58bfe7d29d70e0ecf7be045bf244b2be))
 
