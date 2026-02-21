@@ -1,3 +1,10 @@
+## [0.12.8](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.7...v0.12.8) (2026-02-21)
+
+
+### Bug Fixes
+
+* add manager approval to dashboard ([1716844](https://github.com/l4rm4nd/PyADRecon/commit/17168444a95083828ddcf8e605f398f345562f9a))
+
 ## [0.12.7](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.6...v0.12.7) (2026-02-21)
 
 
@@ -25,11 +32,4 @@
 ### Bug Fixes
 
 * show detected cleartext pws in description/info fields ([d681224](https://github.com/l4rm4nd/PyADRecon/commit/d6812246687d1c73af910dbc906b3a843cf7a7f1))
-
-## [0.12.3](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.2...v0.12.3) (2026-02-21)
-
-
-### Bug Fixes
-
-* add krbtgt rotation and protected users group to dashboard ([03e3046](https://github.com/l4rm4nd/PyADRecon/commit/03e30466f1f1f9033e0aa3341dba7521f855a62e))
 
