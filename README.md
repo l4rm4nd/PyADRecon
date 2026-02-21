@@ -13,6 +13,7 @@ Python3 implementation of an improved [ADRecon](https://github.com/sense-of-secu
 - [Usage](#usage)
 - [Docker](#docker)
 - [Collection Modules](#collection-modules)
+- [HTML Dashboard](#html-dashboard)
 - [Acknowledgements](#acknowledgements)
 - [License](#license)
 
@@ -181,7 +182,7 @@ Though, you can freely select your own collection of modules to run:
 - `dnszones` ✅
 - `dnsrecords` ✅
 
-## PyADRecon HTML Dashboard
+## HTML Dashboard
 
 PyADRecon-ADWS will automatically create an HTML dashboard with important stats and security findings.
 
