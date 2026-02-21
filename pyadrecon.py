@@ -3846,9 +3846,9 @@ class PyADRecon:
     
     def _is_low_privilege_principal(self, principal_name: str) -> bool:
         """Check if a principal is low-privileged based on SID resolution."""
-        # Extract SID from principal name if it's in [Type] Name format
-        if '[SID]' in principal_name:
-            # Extract SID from "[SID] S-1-..."
+        # Extract SID from principal name if it's in [SID] or [domain SID] format
+        if '[SID]' in principal_name or 'SID]' in principal_name:
+            # Extract SID from "[SID] S-1-..." or "[domain.name SID] S-1-..."
             sid_match = re.search(r'S-1-[0-9-]+', principal_name)
             if sid_match:
                 sid = sid_match.group(0)
@@ -3868,7 +3868,23 @@ class PyADRecon:
             '[group] domain guests',
         }
         
-        return principal_lower in low_priv_names
+        if principal_lower in low_priv_names:
+            return True
+        
+        # Check if this is an individual user account (not a well-known admin)
+        # Individual users who are not privileged accounts should be considered low-priv for ESC detection
+        if '[user]' in principal_lower:
+            # Exclude well-known privileged user accounts
+            admin_users = {
+                '[user] administrator',
+                '[user] krbtgt',
+                '[user] guest'
+            }
+            if principal_lower not in admin_users:
+                # This is a regular user account, consider it low-privilege
+                return True
+        
+        return False
     
     def _is_well_known_high_privilege_principal(self, principal_name: str) -> bool:
         """Check if a principal is a well-known high-privilege group/user that should be filtered from LAPS readers.
@@ -4297,6 +4313,11 @@ class PyADRecon:
                 # Check authorization flags
                 no_security_extension = bool(enrollment_flag & 0x80000000)  # ESC9
                 auto_enroll = bool(enrollment_flag & 0x00000020)
+                requires_manager_approval = bool(enrollment_flag & 0x00000002)
+                
+                # Check if authorized signatures are required (ESC3 check)
+                ra_signature_count = safe_int(get_attr(entry, 'msPKI-RA-Signature', 0))
+                requires_authorized_signatures = ra_signature_count > 0
                 
                 # Check if exportable
                 exportable_key = bool(private_key_flag & 0x00000010)  # CT_FLAG_EXPORTABLE_KEY
@@ -4376,33 +4397,71 @@ class PyADRecon:
                 
                 # ESC1: Domain escalation via Subject Alternative Name
                 if enrollee_supplies_subject and has_client_auth and enrollment_principals and not only_admins_can_enroll:
-                    if low_priv_can_enroll:
+                    esc_vulns.append('ESC1')
+                    if requires_manager_approval:
+                        # Manager approval mitigates but doesn't eliminate the risk
+                        if risk_level == 'Low':
+                            risk_level = 'MEDIUM'
+                        risk_factors.append('ESC1: Enrollee supplies subject + Client Auth (mitigated by manager approval)')
+                    elif low_priv_can_enroll:
                         risk_level = 'CRITICAL'
-                        esc_vulns.append('ESC1')
                         risk_factors.append('ESC1: Enrollee supplies subject + Client Auth + Low-priv enrollment')
                     else:
                         risk_level = 'HIGH'
-                        esc_vulns.append('ESC1')
                         risk_factors.append('ESC1: Enrollee supplies subject + Client Auth')
                 
                 # ESC2: Any Purpose EKU
                 if has_any_purpose_eku and enrollment_principals and not only_admins_can_enroll:
-                    if low_priv_can_enroll:
+                    esc_vulns.append('ESC2')
+                    if requires_manager_approval:
+                        # Manager approval mitigates but doesn't eliminate the risk
+                        if risk_level == 'Low':
+                            risk_level = 'Low'
+                        risk_factors.append('ESC2: Any Purpose EKU (mitigated by manager approval requirement)')
+                    elif low_priv_can_enroll:
                         if risk_level != 'CRITICAL':
                             risk_level = 'HIGH'
-                        esc_vulns.append('ESC2')
+                        risk_factors.append('ESC2: Any Purpose EKU allows arbitrary certificate usage')
+                    else:
+                        if risk_level not in ['CRITICAL', 'HIGH']:
+                            risk_level = 'MEDIUM'
                         risk_factors.append('ESC2: Any Purpose EKU allows arbitrary certificate usage')
                 
                 # ESC3: Enrollment Agent template
+                # ESC3 requires: Certificate Request Agent EKU + No authorized signatures + No manager approval
                 if has_enrollment_agent and enrollment_principals and not only_admins_can_enroll:
-                    if low_priv_can_enroll:
+                    esc_vulns.append('ESC3')
+                    # Check if both manager approval AND authorized signatures are missing (both mitigations absent)
+                    if not requires_manager_approval and not requires_authorized_signatures:
+                        # No mitigations in place - this is exploitable
+                        if low_priv_can_enroll:
+                            if risk_level not in ['CRITICAL', 'HIGH']:
+                                risk_level = 'HIGH'
+                            risk_factors.append('ESC3: Certificate Request Agent EKU with no approval/signature requirements')
+                        else:
+                            if risk_level not in ['CRITICAL', 'HIGH']:
+                                risk_level = 'MEDIUM'
+                            risk_factors.append('ESC3: Certificate Request Agent EKU with no approval/signature requirements')
+                    elif requires_manager_approval and requires_authorized_signatures:
+                        # Both mitigations present
+                        if risk_level == 'Low':
+                            risk_level = 'Low'
+                        risk_factors.append('ESC3: Certificate Request Agent EKU (mitigated by manager approval + authorized signatures)')
+                    elif requires_manager_approval or requires_authorized_signatures:
+                        # One mitigation present
+                        if risk_level == 'Low':
+                            risk_level = 'Low'
+                        mitigation = 'manager approval' if requires_manager_approval else 'authorized signatures'
+                        risk_factors.append(f'ESC3: Certificate Request Agent EKU (partially mitigated by {mitigation})')
+                    else:
+                        # Edge case - shouldn't reach here
                         if risk_level not in ['CRITICAL', 'HIGH']:
-                            risk_level = 'HIGH'
-                        esc_vulns.append('ESC3')
-                        risk_factors.append('ESC3: Certificate Request Agent EKU (enrollment agent)')
+                            risk_level = 'MEDIUM'
+                        risk_factors.append('ESC3: Certificate Request Agent EKU')
                 
                 # ESC4: Vulnerable template ACLs
                 if low_priv_can_write:
+                    # ESC4 is not mitigated by manager approval - attackers can modify the template to disable it
                     if risk_level not in ['CRITICAL', 'HIGH']:
                         risk_level = 'HIGH'
                     esc_vulns.append('ESC4')
@@ -4410,10 +4469,16 @@ class PyADRecon:
                 
                 # ESC9: No security extension
                 if vulnerable_to_esc9 and enrollment_principals and not only_admins_can_enroll:
-                    if risk_level == 'Low':
-                        risk_level = 'Medium'
                     esc_vulns.append('ESC9')
-                    risk_factors.append('ESC9: No security extension (vulnerable to certificate theft)')
+                    if requires_manager_approval:
+                        # Manager approval provides some mitigation for ESC9
+                        if risk_level == 'Low':
+                            risk_level = 'Low'
+                        risk_factors.append('ESC9: No security extension (mitigated by manager approval)')
+                    else:
+                        if risk_level == 'Low':
+                            risk_level = 'Medium'
+                        risk_factors.append('ESC9: No security extension (vulnerable to certificate theft)')
                 
                 # Additional risk factors
                 if only_admins_can_enroll and (enrollee_supplies_subject and has_client_auth):
@@ -4434,11 +4499,12 @@ class PyADRecon:
                     risk_factors.append('Low-privileged users can enroll')
                 
                 # Check if owner is low-privileged (potential ESC4 variant)
-                low_priv_owner = False
                 if owner_principal and self._is_low_privilege_principal(owner_principal):
-                    low_priv_owner = True
+                    # ESC4 is not mitigated by manager approval - owner can modify the template
                     if risk_level not in ['CRITICAL', 'HIGH']:
                         risk_level = 'HIGH'
+                    if 'ESC4' not in esc_vulns:
+                        esc_vulns.append('ESC4')
                     risk_factors.append('ESC4: Low-privileged owner can modify template')
                 
                 # If no ESC vulnerabilities and no risk factors, set risk level to None
@@ -4469,6 +4535,7 @@ class PyADRecon:
                     "Exportable Key": exportable_key,
                     "Auto-Enrollment": auto_enroll,
                     "Requires Manager Approval": bool(enrollment_flag & 0x00000002),
+                    "Authorized Signatures Required": ra_signature_count,
                     "Enrollment Flag": hex(enrollment_flag),
                     "Certificate Name Flag": hex(cert_name_flag),
                     "Private Key Flag": hex(private_key_flag),
