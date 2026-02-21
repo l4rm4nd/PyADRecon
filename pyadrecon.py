@@ -7064,6 +7064,60 @@ def generate_excel_from_csv(csv_dir: str, output_file: str = None):
         traceback.print_exc()
         return None
 
+
+def generate_dashboard_from_csv(csv_dir: str, output_file: str = None):
+    """
+    Standalone function to generate HTML dashboard from CSV files.
+    
+    Args:
+        csv_dir: Path to directory containing CSV files
+        output_file: Output HTML file path (optional, defaults to dashboard.html in same directory)
+    
+    Returns:
+        Path to generated dashboard file on success, None on failure
+    """
+    if not DASHBOARD_AVAILABLE:
+        logger.error("[!] Dashboard generator not available (dashboard_generator.py not found)")
+        return None
+    
+    if not os.path.isdir(csv_dir):
+        logger.error(f"[!] CSV directory not found: {csv_dir}")
+        return None
+    
+    logger.info(f"[*] Generating HTML dashboard from CSV files in: {csv_dir}")
+    start_time = datetime.now()
+    
+    try:
+        # Determine output file path
+        if output_file:
+            if os.path.isdir(output_file):
+                dashboard_file = os.path.join(output_file, 'dashboard.html')
+            else:
+                dashboard_file = output_file
+        else:
+            # Default to dashboard.html in the CSV directory's parent
+            parent_dir = os.path.dirname(csv_dir) if os.path.dirname(csv_dir) else csv_dir
+            dashboard_file = os.path.join(parent_dir, 'dashboard.html')
+        
+        # Generate the dashboard
+        result = generate_dashboard(csv_dir, dashboard_file)
+        
+        if result:
+            duration = datetime.now() - start_time
+            logger.info(f"[+] Dashboard saved to: {os.path.abspath(dashboard_file)}")
+            logger.info(f"[+] Total time: {duration}")
+            return os.path.abspath(dashboard_file)
+        else:
+            logger.error("[!] Dashboard generation failed")
+            return None
+            
+    except Exception as e:
+        logger.error(f"[!] Failed to generate dashboard: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="PyADRecon - Python Active Directory Reconnaissance Tool",
@@ -7090,17 +7144,22 @@ Examples:
 
   # Generate Excel report from existing CSV files (standalone mode)
   %(prog)s --generate-excel-from /path/to/CSV-Files -o report.xlsx
+
+  # Generate HTML dashboard from existing CSV files (standalone mode)
+  %(prog)s --generate-dashboard-from /path/to/CSV-Files -o dashboard.html
         """
     )
 
     # Version argument
     parser.add_argument('--version', action='version', version=f'PyADRecon {VERSION}')
 
-    # Standalone Excel generation mode
+    # Standalone generation modes
     parser.add_argument('--generate-excel-from', metavar='CSV_DIR',
                        help='Generate Excel report from CSV directory (standalone mode, no AD connection needed)')
+    parser.add_argument('--generate-dashboard-from', metavar='CSV_DIR',
+                       help='Generate HTML dashboard from CSV directory (standalone mode, no AD connection needed)')
 
-    # Required arguments (not required if using --generate-excel-from)
+    # Required arguments (not required if using --generate-excel-from or --generate-dashboard-from)
     parser.add_argument('-dc', '--domain-controller', default='',
                        help='Domain Controller IP or hostname')
     parser.add_argument('-u', '--username', default='',
@@ -7164,12 +7223,32 @@ Examples:
             sys.exit(0)
         else:
             sys.exit(1)
+    
+    # Handle standalone Dashboard generation mode
+    if args.generate_dashboard_from:
+        print(BANNER)
+        logger.info("Running in standalone dashboard generation mode")
+        
+        if not DASHBOARD_AVAILABLE:
+            print("[!] Dashboard generator not available (dashboard_generator.py not found)")
+            sys.exit(1)
+        
+        csv_dir = args.generate_dashboard_from
+        output_file = args.output if args.output else None
+        
+        result = generate_dashboard_from_csv(csv_dir, output_file)
+        if result:
+            logger.info(f"[+] Dashboard generated: {result}")
+            sys.exit(0)
+        else:
+            sys.exit(1)
 
     # Check required arguments for normal mode
     if not args.domain_controller or not args.username or not args.domain:
         print("[!] Error: -dc, -u, and -d are required for AD reconnaissance mode")
         print("[!] Example: -dc dc1.domain.local -u admin -d DOMAIN.LOCAL")
         print("[!] Use --generate-excel-from for standalone Excel generation from CSV files")
+        print("[!] Use --generate-dashboard-from for standalone dashboard generation from CSV files")
         sys.exit(1)
     
     if args.auth == "ntlm":
