@@ -869,6 +869,11 @@ class DashboardGenerator:
                                         <i v-if="vulnCertTemplateSortColumn === 'Enrollment Rights'" :class="vulnCertTemplateSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
                                         <i v-else class="fas fa-sort ml-1 opacity-30"></i>
                                     </th>
+                                    <th @click="sortVulnCertTemplates('Requires Manager Approval')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Manager Approval
+                                        <i v-if="vulnCertTemplateSortColumn === 'Requires Manager Approval'" :class="vulnCertTemplateSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                        <i v-else class="fas fa-sort ml-1 opacity-30"></i>
+                                    </th>
                                     <th @click="sortVulnCertTemplates('Risk Level')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
                                         Risk Level
                                         <i v-if="vulnCertTemplateSortColumn === 'Risk Level'" :class="vulnCertTemplateSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
@@ -887,6 +892,10 @@ class DashboardGenerator:
                                     </td>
                                     <td class="px-6 py-4 text-sm">{{{{ template['Risk Factors'] !== 'None' ? template['Risk Factors'] : '-' }}}}</td>
                                     <td class="px-6 py-4 text-sm">{{{{ template['Enrollment Rights'] }}}}</td>
+                                    <td class="px-6 py-4">
+                                        <span v-if="template['Requires Manager Approval'] === true || template['Requires Manager Approval'] === 'True'" class="badge badge-low">Yes</span>
+                                        <span v-else class="badge badge-high">No</span>
+                                    </td>
                                     <td class="px-6 py-4">
                                         <span v-if="template['Risk Level'] === 'CRITICAL'" class="badge badge-critical">CRITICAL</span>
                                         <span v-else-if="template['Risk Level'] === 'HIGH'" class="badge badge-high">HIGH</span>
@@ -1502,6 +1511,11 @@ class DashboardGenerator:
                                         <i v-if="certTemplateSortColumn === 'Enrollment Rights'" :class="certTemplateSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
                                         <i v-else class="fas fa-sort ml-1 opacity-30"></i>
                                     </th>
+                                    <th @click="sortCertTemplates('Requires Manager Approval')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Manager Approval
+                                        <i v-if="certTemplateSortColumn === 'Requires Manager Approval'" :class="certTemplateSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                        <i v-else class="fas fa-sort ml-1 opacity-30"></i>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -1517,6 +1531,10 @@ class DashboardGenerator:
                                     </td>
                                     <td class="px-6 py-4 text-sm">{{{{ template['ESC Vulnerabilities'] || 'None' }}}}</td>
                                     <td class="px-6 py-4 text-sm">{{{{ template['Enrollment Rights'] || 'N/A' }}}}</td>
+                                    <td class="px-6 py-4">
+                                        <span v-if="template['Requires Manager Approval'] === true || template['Requires Manager Approval'] === 'True'" class="badge badge-low">Yes</span>
+                                        <span v-else class="badge badge-high">No</span>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
