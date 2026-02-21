@@ -1183,11 +1183,6 @@ class DashboardGenerator:
                                         <i v-if="lapsSortColumn === 'Enabled'" :class="lapsSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
                                         <i v-else class="fas fa-sort ml-1 opacity-30"></i>
                                     </th>
-                                    <th @click="sortLaps('Stored')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
-                                        Password Stored
-                                        <i v-if="lapsSortColumn === 'Stored'" :class="lapsSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
-                                        <i v-else class="fas fa-sort ml-1 opacity-30"></i>
-                                    </th>
                                     <th @click="sortLaps('Readable')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
                                         Readable
                                         <i v-if="lapsSortColumn === 'Readable'" :class="lapsSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
@@ -1203,6 +1198,11 @@ class DashboardGenerator:
                                         <i v-if="lapsSortColumn === 'Expiration'" :class="lapsSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
                                         <i v-else class="fas fa-sort ml-1 opacity-30"></i>
                                     </th>
+                                    <th @click="sortLaps('Readers')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Readers
+                                        <i v-if="lapsSortColumn === 'Readers'" :class="lapsSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                        <i v-else class="fas fa-sort ml-1 opacity-30"></i>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -1210,10 +1210,6 @@ class DashboardGenerator:
                                     <td class="px-6 py-4 whitespace-nowrap font-medium">{{{{ computer.Hostname || 'N/A' }}}}</td>
                                     <td class="px-6 py-4">
                                         <span v-if="computer.Enabled === 'True'" class="badge badge-low">Yes</span>
-                                        <span v-else class="badge badge-none">No</span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span v-if="computer.Stored === 'True'" class="badge badge-low">Yes</span>
                                         <span v-else class="badge badge-none">No</span>
                                     </td>
                                     <td class="px-6 py-4">
@@ -1225,6 +1221,10 @@ class DashboardGenerator:
                                         <span v-else class="text-gray-400">-</span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">{{{{ computer.Expiration || 'N/A' }}}}</td>
+                                    <td class="px-6 py-4 text-sm">
+                                        <span v-if="computer.Readers" class="text-orange-600 dark:text-orange-400">{{{{ computer.Readers }}}}</span>
+                                        <span v-else class="text-gray-400">-</span>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
@@ -1367,7 +1367,7 @@ class DashboardGenerator:
                         </p>
                         <h3 class="font-semibold text-amber-800 dark:text-amber-200 mb-2">🔓 Exploitation Method</h3>
                         <p class="text-amber-700 dark:text-amber-300 text-sm mb-3">
-                            Use PowerShell (<code>New-MachineAccount</code>), Impacket's <span class="tool-link">addcomputer.py</span>, or StandIn to add computer accounts. Configure RBCD using PowerView/PowerMad to enable impersonation attacks. Computer accounts have SPNs enabling Silver Ticket attacks and can be used for lateral movement via unconstrained delegation abuse.
+                            Use PowerShell (<code>New-MachineAccount</code>), Impacket's <a target="_blank" href="https://github.com/fortra/impacket/blob/master/examples/addcomputer.py" class="tool-link">addcomputer.py</a>, or StandIn to add computer accounts. Configure RBCD using PowerView/PowerMad to enable impersonation attacks. Computer accounts have SPNs enabling Silver Ticket attacks and can be used for lateral movement via unconstrained delegation abuse.
                         </p>
                         <h3 class="font-semibold text-amber-800 dark:text-amber-200 mb-2">💡 Remediation</h3>
                         <p class="text-amber-700 dark:text-amber-300 text-sm">
