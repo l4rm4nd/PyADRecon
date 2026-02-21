@@ -189,7 +189,7 @@ PyADRecon-ADWS will automatically create an HTML dashboard with important stats 
 You may disable HTML dashboard generation via `--no-dashboard`.
 
 >[!CAUTION]
-> This is a beta feature. Displayed data may be falsely parsed or reported as issue
+> This is a beta feature. Displayed data may be falsely parsed or reported as issue. Take it with a grain of salt!
 
 <img width="1209" height="500" alt="image" src="https://github.com/user-attachments/assets/e9500806-374d-4c69-a9a8-7f1540779266" />
 
