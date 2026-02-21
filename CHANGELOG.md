@@ -1,3 +1,10 @@
+## [0.12.9](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.8...v0.12.9) (2026-02-21)
+
+
+### Bug Fixes
+
+* refactor ESC9 detection ([9a58455](https://github.com/l4rm4nd/PyADRecon/commit/9a584559bbf4fac26e71264b2c4126af6fee6670))
+
 ## [0.12.8](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.7...v0.12.8) (2026-02-21)
 
 
@@ -25,11 +32,4 @@
 ### Bug Fixes
 
 * counter for security findings in navigation ([b856c3d](https://github.com/l4rm4nd/PyADRecon/commit/b856c3d4395b093cb0545c8ed716aaed3f868223))
-
-## [0.12.4](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.3...v0.12.4) (2026-02-21)
-
-
-### Bug Fixes
-
-* show detected cleartext pws in description/info fields ([d681224](https://github.com/l4rm4nd/PyADRecon/commit/d6812246687d1c73af910dbc906b3a843cf7a7f1))
 
