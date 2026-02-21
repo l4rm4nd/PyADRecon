@@ -379,7 +379,7 @@ class DashboardGenerator:
                         <i class="fas fa-shield-virus"></i> Security Findings
                     </h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div @click="navigateToSection('findings', 'adcs-templates-section')" class="stat-card bg-white dark:bg-gray-800 rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow">
+                    <div v-if="vulnerableCertTemplates.length > 0" @click="navigateToSection('findings', 'adcs-templates-section')" class="stat-card bg-white dark:bg-gray-800 rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow">
                             <div class="flex items-center">
                                 <div class="flex-shrink-0 bg-orange-100 dark:bg-orange-900/30 rounded-md p-3">
                                     <i class="fas fa-certificate text-orange-600 text-2xl"></i>
@@ -395,7 +395,7 @@ class DashboardGenerator:
                                 </div>
                             </div>
                         </div>
-                        <div @click="navigateToSection('findings', 'kerberoastable-section')" class="stat-card bg-white dark:bg-gray-800 rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow">
+                        <div v-if="kerberoastable.length > 0" @click="navigateToSection('findings', 'kerberoastable-section')" class="stat-card bg-white dark:bg-gray-800 rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-purple-100 dark:bg-purple-900/30 rounded-md p-3">
                                 <i class="fas fa-ticket text-purple-600 text-2xl"></i>
@@ -412,7 +412,7 @@ class DashboardGenerator:
                         </div>
                     </div>
                     
-                        <div @click="navigateToSection('findings', 'asreproastable-section')" class="stat-card bg-white dark:bg-gray-800 rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow">
+                        <div v-if="asreproastable.length > 0" @click="navigateToSection('findings', 'asreproastable-section')" class="stat-card bg-white dark:bg-gray-800 rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-pink-100 dark:bg-pink-900/30 rounded-md p-3">
                                 <i class="fas fa-key text-pink-600 text-2xl"></i>
@@ -429,7 +429,7 @@ class DashboardGenerator:
                         </div>
                     </div>
                     
-                        <div @click="navigateToSection('findings', 'passwords-section')" class="stat-card bg-white dark:bg-gray-800 rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow">
+                        <div v-if="usersWithPasswordsInInfo.length > 0" @click="navigateToSection('findings', 'passwords-section')" class="stat-card bg-white dark:bg-gray-800 rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-red-100 dark:bg-red-900/30 rounded-md p-3">
                                 <i class="fas fa-lock-open text-red-600 text-2xl"></i>
@@ -446,7 +446,7 @@ class DashboardGenerator:
                         </div>
                     </div>
                     
-                    <div @click="navigateToSection('findings', 'laps-section')" class="stat-card bg-white dark:bg-gray-800 rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow">
+                    <div v-if="lapsReadable.length > 0" @click="navigateToSection('findings', 'laps-section')" class="stat-card bg-white dark:bg-gray-800 rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-indigo-100 dark:bg-indigo-900/30 rounded-md p-3">
                                 <i class="fas fa-user-shield text-indigo-600 text-2xl"></i>
@@ -463,7 +463,7 @@ class DashboardGenerator:
                         </div>
                     </div>
 
-                    <div @click="navigateToSection('findings', 'password-policy-section')" class="stat-card bg-white dark:bg-gray-800 rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow">
+                    <div v-if="failedCISControls > 0" @click="navigateToSection('findings', 'password-policy-section')" class="stat-card bg-white dark:bg-gray-800 rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-yellow-100 dark:bg-yellow-900/30 rounded-md p-3">
                                 <i class="fas fa-key text-yellow-600 text-2xl"></i>
@@ -508,6 +508,23 @@ class DashboardGenerator:
                                     <dd class="text-3xl font-semibold text-gray-900 dark:text-white">{{{{ unprotectedPrivilegedUsers.length }}}}</dd>
                                     <dd class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                         Not in Protected Users
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div v-if="machineAccountQuota > 0" @click="navigateToSection('findings', 'machine-quota-section')" class="stat-card bg-white dark:bg-gray-800 rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-amber-100 dark:bg-amber-900/30 rounded-md p-3">
+                                <i class="fas fa-server text-amber-600 text-2xl"></i>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Machine Account Quota</dt>
+                                    <dd class="text-3xl font-semibold text-gray-900 dark:text-white">{{{{ machineAccountQuota }}}}</dd>
+                                    <dd class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        computers can be added
                                     </dd>
                                 </dl>
                             </div>
@@ -1334,6 +1351,59 @@ class DashboardGenerator:
                     </div>
                 </div>
 
+                <!-- Machine Account Quota -->
+                <div id="machine-quota-section" v-if="machineAccountQuota > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                        <i class="fas fa-server text-amber-600"></i> Machine Account Quota ({{{{ machineAccountQuota }}}})
+                    </h2>
+                    <div class="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 p-4 mb-6">
+                        <h3 class="font-semibold text-amber-800 dark:text-amber-200 mb-2">🎯 Issue & Impact</h3>
+                        <p class="text-amber-700 dark:text-amber-300 text-sm mb-3">
+                            The ms-DS-MachineAccountQuota attribute controls how many computer accounts an authenticated user can join to the domain. When set above 0 (default is 10), any domain user can add workstations to Active Directory without administrative privileges, creating unauthorized attack surfaces.
+                        </p>
+                        <h3 class="font-semibold text-amber-800 dark:text-amber-200 mb-2">⚔️ Attacker Benefit</h3>
+                        <p class="text-amber-700 dark:text-amber-300 text-sm mb-3">
+                            Attackers with low-privileged access can join rogue computers to the domain, enabling Resource-Based Constrained Delegation (RBCD) attacks, computer account password hash harvesting, Kerberos delegation abuse, and establishing persistent footholds. Rogue computers bypass network access controls and monitoring.
+                        </p>
+                        <h3 class="font-semibold text-amber-800 dark:text-amber-200 mb-2">🔓 Exploitation Method</h3>
+                        <p class="text-amber-700 dark:text-amber-300 text-sm mb-3">
+                            Use PowerShell (<code>New-MachineAccount</code>), Impacket's <span class="tool-link">addcomputer.py</span>, or StandIn to add computer accounts. Configure RBCD using PowerView/PowerMad to enable impersonation attacks. Computer accounts have SPNs enabling Silver Ticket attacks and can be used for lateral movement via unconstrained delegation abuse.
+                        </p>
+                        <h3 class="font-semibold text-amber-800 dark:text-amber-200 mb-2">💡 Remediation</h3>
+                        <p class="text-amber-700 dark:text-amber-300 text-sm">
+                            <strong>Set ms-DS-MachineAccountQuota to 0:</strong> Use PowerShell: <code>Set-ADDomain -Identity (Get-ADDomain) -Replace @{{"ms-DS-MachineAccountQuota"="0"}}</code> or ADSI Edit to modify the domain object. This prevents non-administrative users from joining computers. Implement controlled computer creation through IT helpdesk workflows with proper approval processes. Regularly audit computer accounts for unauthorized additions using the <code>whenCreated</code> and <code>creator</code> attributes.
+                        </p>
+                    </div>
+                    <div class="table-container">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead>
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Attribute</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Current Value</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Recommended</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Risk Level</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap font-medium">ms-DS-MachineAccountQuota</td>
+                                    <td class="px-6 py-4">
+                                        <span class="text-red-600 dark:text-red-400 font-bold text-lg">{{{{ machineAccountQuota }}}}</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="badge badge-none">0</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span v-if="machineAccountQuota >= 10" class="badge badge-high">HIGH</span>
+                                        <span v-else-if="machineAccountQuota > 0" class="badge badge-medium">MEDIUM</span>
+                                        <span v-else class="badge badge-none">NONE</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <!-- Password Policy Analysis -->
                 <div id="password-policy-section" v-if="passwordPolicy.length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                     <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
@@ -2065,6 +2135,18 @@ class DashboardGenerator:
                     }});
                 }},
                 
+                machineAccountQuota() {{
+                    if (this.domain.length > 0) {{
+                        // Domain.csv has Category/Value format
+                        const quotaEntry = this.domain.find(d => d.Category === 'ms-DS-MachineAccountQuota');
+                        if (quotaEntry) {{
+                            const quota = parseInt(quotaEntry.Value);
+                            return isNaN(quota) ? 0 : quota;
+                        }}
+                    }}
+                    return 0;
+                }},
+                
                 lapsEnabled() {{
                     return this.laps.filter(l => l['LAPS Enabled'] === 'True' || l['LAPS Enabled'] === 'TRUE');
                 }},
@@ -2124,6 +2206,7 @@ class DashboardGenerator:
                     if (this.passwordPolicy.length > 0) count++; // Password Policy
                     if (this.krbtgtOldPassword.length > 0) count++; // KRBTGT password rotation
                     if (this.unprotectedPrivilegedUsers.length > 0) count++; // Protected Users group
+                    if (this.machineAccountQuota > 0) count++; // Machine Account Quota
                     return count;
                 }},
                 
