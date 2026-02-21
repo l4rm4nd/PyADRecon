@@ -186,9 +186,9 @@ Though, you can freely select your own collection of modules to run:
 
 ## HTML Dashboard
 
-PyADRecon will automatically create an HTML dashboard with important stats and security findings.
+PyADRecon will automatically create an HTML dashboard with important stats and security findings if all collection modules were selected.
 
-You may disable HTML dashboard generation via `--no-dashboard`.
+You may disable HTML dashboard generation via `--no-dashboard`. You maybe generate an HTML dashboard from existing CSV files using `--generate-dashboard-from`.
 
 >[!CAUTION]
 > This is a beta feature. Displayed data may be falsely parsed or reported as issue. Take it with a grain of salt!
