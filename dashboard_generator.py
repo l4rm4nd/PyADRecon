@@ -1929,7 +1929,7 @@ class DashboardGenerator:
                 }},
                 
                 filteredUsers() {{
-                    let filtered = this.users;
+                    let filtered = [...this.users];
                     
                     // Apply search
                     if (this.userSearch) {{
@@ -2188,7 +2188,7 @@ class DashboardGenerator:
                 }},
                 
                 filteredComputers() {{
-                    let filtered = this.computers;
+                    let filtered = [...this.computers];
                     
                     // Apply search
                     if (this.computerSearch) {{
