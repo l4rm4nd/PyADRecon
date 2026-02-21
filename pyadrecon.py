@@ -103,7 +103,7 @@ if not KERBEROS_AVAILABLE:
 
 
 # Constants
-VERSION = "v0.12.8"  # Automatically updated by CI/CD pipeline during release
+VERSION = "v0.12.7"  # Automatically updated by CI/CD pipeline during release
 BANNER = f"""
 ╔═════════════════════════════════════════════════════════
 ║  PyADRecon {VERSION} - Python AD Reconnaissance Tool      
@@ -4467,18 +4467,16 @@ class PyADRecon:
                     esc_vulns.append('ESC4')
                     risk_factors.append('ESC4: Non-admin principals have write access to template')
                 
-                # ESC9: No security extension
-                if vulnerable_to_esc9 and enrollment_principals and not only_admins_can_enroll:
+                # ESC9: No security extension + Client Auth + No approvals + Low-priv enrollment
+                # Requires ALL of: CT_FLAG_NO_SECURITY_EXTENSION, Client Authentication EKU,
+                # No Manager Approval, No Authorized Signatures, Low-privileged enrollment
+                if (vulnerable_to_esc9 and has_client_auth and 
+                    not requires_manager_approval and not requires_authorized_signatures and 
+                    low_priv_can_enroll):
                     esc_vulns.append('ESC9')
-                    if requires_manager_approval:
-                        # Manager approval provides some mitigation for ESC9
-                        if risk_level == 'Low':
-                            risk_level = 'Low'
-                        risk_factors.append('ESC9: No security extension (mitigated by manager approval)')
-                    else:
-                        if risk_level == 'Low':
-                            risk_level = 'Medium'
-                        risk_factors.append('ESC9: No security extension (vulnerable to certificate theft)')
+                    if risk_level not in ['CRITICAL', 'HIGH']:
+                        risk_level = 'HIGH'
+                    risk_factors.append('ESC9: No security extension + Client Auth + No approvals (allows certificate theft & impersonation)')
                 
                 # Additional risk factors
                 if only_admins_can_enroll and (enrollee_supplies_subject and has_client_auth):
