@@ -58,6 +58,7 @@ COPY --from=builder /install /usr/local
 
 # Copy application
 COPY pyadrecon.py /app/
+COPY dashboard_generator.py /app/
 
 WORKDIR /app
 ENTRYPOINT ["python", "pyadrecon.py"]
