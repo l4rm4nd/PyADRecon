@@ -70,6 +70,11 @@ class DashboardGenerator:
     <style>
         [v-cloak] {{ display: none; }}
         
+        /* Smooth scrolling */
+        html {{
+            scroll-behavior: smooth;
+        }}
+        
         /* Dark mode styles */
         body.dark {{
             background-color: #0f172a;
@@ -305,39 +310,41 @@ class DashboardGenerator:
         <!-- Header -->
         <header class="bg-white dark:bg-gray-800 shadow-lg sticky top-0 z-50">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h1 class="text-3xl font-bold text-white">
+                <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
+                    <div class="flex-1">
+                        <h1 class="text-2xl sm:text-3xl font-bold text-white cursor-pointer hover:text-blue-400 transition" 
+                            @click="scrollToSecurityFindings" 
+                            title="Back to Security Findings">
                             <i class="fas fa-shield-halved text-blue-600"></i>
                             PyADRecon Dashboard
                         </h1>
-                        <div class="flex gap-4 text-sm text-gray-400 mt-2">
-                            <span v-if="aboutInfo.version">
+                        <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs sm:text-sm text-gray-400 mt-2">
+                            <span v-if="aboutInfo.version" class="whitespace-nowrap">
                                 <i class="fas fa-code-branch"></i> {{{{ aboutInfo.version }}}}
                             </span>
-                            <span v-if="aboutInfo.domain">
+                            <span v-if="aboutInfo.domain" class="whitespace-nowrap">
                                 <i class="fas fa-network-wired"></i> Target: {{{{ aboutInfo.domain }}}}
                             </span>
-                            <span v-if="aboutInfo.user">
+                            <span v-if="aboutInfo.user" class="whitespace-nowrap">
                                 <i class="fas fa-user"></i> Executed by: {{{{ aboutInfo.user }}}}
                             </span>
-                            <span v-if="aboutInfo.computer">
+                            <span v-if="aboutInfo.computer" class="whitespace-nowrap">
                                 <i class="fas fa-desktop"></i> From: {{{{ aboutInfo.computer }}}}
                             </span>
-                            <span>
+                            <span class="whitespace-nowrap">
                                 <i class="fas fa-clock"></i> Generated: {generation_timestamp}
                             </span>
                         </div>
                     </div>
-                    <div class="flex gap-4 items-center">
+                    <div class="flex flex-wrap gap-2 sm:gap-3 items-center">
                         <a v-if="aboutInfo.github" :href="'https://' + aboutInfo.github" target="_blank"
-                           class="px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition"
+                           class="px-3 py-2 sm:px-4 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition text-sm sm:text-base"
                            title="View on GitHub">
-                            <i class="fab fa-github"></i>
+                            <i class="fab fa-github"></i><span class="hidden sm:inline ml-1">GitHub</span>
                         </a>
                         <a :href="'vulnad_local-Report.xlsx'" download
-                           class="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition">
-                            <i class="fas fa-file-excel"></i> Download XLSX
+                           class="px-3 py-2 sm:px-4 rounded-lg bg-green-600 text-white hover:bg-green-700 transition text-sm sm:text-base whitespace-nowrap">
+                            <i class="fas fa-file-excel"></i> <span class="hidden sm:inline">Download </span>XLSX
                         </a>
                     </div>
                 </div>
@@ -345,7 +352,7 @@ class DashboardGenerator:
         </header>
 
         <!-- Navigation Tabs -->
-        <nav class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-20 z-40">
+        <nav class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky z-40" style="top: var(--header-height, 120px);">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex space-x-8">
                     <button v-for="tab in tabs" :key="tab.id"
@@ -374,7 +381,7 @@ class DashboardGenerator:
             <!-- Overview Tab -->
             <div v-if="activeTab === 'overview'" class="space-y-6">
                 <!-- Security Findings Tiles -->
-                <div class="mb-6">
+                <div id="security-findings-section" class="mb-6">
                     <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-3">
                         <i class="fas fa-shield-virus"></i> Security Findings
                     </h3>
@@ -2577,6 +2584,30 @@ class DashboardGenerator:
                 }}
             }},
             methods: {{
+                scrollToSecurityFindings() {{
+                    // Switch to overview tab and scroll to security findings
+                    this.activeTab = 'overview';
+                    this.$nextTick(() => {{
+                        const element = document.getElementById('security-findings-section');
+                        if (element) {{
+                            const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+                            // Calculate actual offset from sticky elements
+                            const header = document.querySelector('header');
+                            const nav = document.querySelector('nav');
+                            const offset = (header?.offsetHeight || 0) + (nav?.offsetHeight || 0) + 10;
+                            window.scrollTo({{
+                                top: elementPosition - offset,
+                                behavior: 'smooth'
+                            }});
+                        }} else {{
+                            // Fallback: just scroll to top
+                            window.scrollTo({{
+                                top: 0,
+                                behavior: 'smooth'
+                            }});
+                        }}
+                    }});
+                }},
                 navigateToSection(tab, sectionId) {{
                     this.activeTab = tab;
                     this.$nextTick(() => {{
@@ -2584,8 +2615,10 @@ class DashboardGenerator:
                         if (element) {{
                             // Get the element's position
                             const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
-                            // Account for sticky header and navigation (approximately 140px combined)
-                            const offset = 140;
+                            // Calculate actual offset from sticky elements (header + nav)
+                            const header = document.querySelector('header');
+                            const nav = document.querySelector('nav');
+                            const offset = (header?.offsetHeight || 0) + (nav?.offsetHeight || 0) + 10;
                             const scrollToPosition = elementPosition - offset;
                             
                             // Smooth scroll to the adjusted position
@@ -3038,6 +3071,19 @@ class DashboardGenerator:
                 // Set dark mode on body immediately
                 document.body.classList.add('dark');
                 
+                // Calculate and set header height for sticky navigation
+                const updateHeaderHeight = () => {{
+                    const header = document.querySelector('header');
+                    if (header) {{
+                        const height = header.offsetHeight;
+                        document.documentElement.style.setProperty('--header-height', `${{height}}px`);
+                    }}
+                }};
+                
+                // Update header height on mount and window resize
+                updateHeaderHeight();
+                window.addEventListener('resize', updateHeaderHeight);
+                
                 this.$nextTick(() => {{
                     this.initCharts();
                     this.initTrustGraph();
@@ -3045,6 +3091,9 @@ class DashboardGenerator:
                     
                     // Update tab counts
                     this.tabs.find(t => t.id === 'findings').count = this.criticalFindings.length;
+                    
+                    // Recalculate header height after content loads
+                    updateHeaderHeight();
                 }});
             }},
             watch: {{
