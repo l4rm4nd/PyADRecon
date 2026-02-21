@@ -1,3 +1,10 @@
+## [0.12.7](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.6...v0.12.7) (2026-02-21)
+
+
+### Bug Fixes
+
+* add laps readers to table and adjust maq text ([2586914](https://github.com/l4rm4nd/PyADRecon/commit/25869149ce6a8c16923b3cace2bcb0e1e5db5025))
+
 ## [0.12.6](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.5...v0.12.6) (2026-02-21)
 
 
@@ -25,11 +32,4 @@
 ### Bug Fixes
 
 * add krbtgt rotation and protected users group to dashboard ([03e3046](https://github.com/l4rm4nd/PyADRecon/commit/03e30466f1f1f9033e0aa3341dba7521f855a62e))
-
-## [0.12.2](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.1...v0.12.2) (2026-02-21)
-
-
-### Bug Fixes
-
-* Update Dockerfile ([783e6ea](https://github.com/l4rm4nd/PyADRecon/commit/783e6eab3f3396107f52c1183a135efaa5766561))
 
