@@ -286,6 +286,18 @@ class DashboardGenerator:
         .loading-message.show {{
             display: block;
         }}
+        
+        /* Inline tool links - inherit color, no underline, subtle hover */
+        .tool-link {{
+            color: inherit;
+            text-decoration: none;
+            border-bottom: 1px dotted currentColor;
+            transition: opacity 0.2s;
+        }}
+        
+        .tool-link:hover {{
+            opacity: 0.7;
+        }}
     </style>
 </head>
 <body class="bg-gray-900 dark">
@@ -462,6 +474,40 @@ class DashboardGenerator:
                                     <dd class="text-3xl font-semibold text-gray-900 dark:text-white">{{{{ failedCISControls }}}}</dd>
                                     <dd class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                         Failed CIS controls
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div v-if="krbtgtOldPassword.length > 0" @click="navigateToSection('findings', 'krbtgt-section')" class="stat-card bg-white dark:bg-gray-800 rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-red-100 dark:bg-red-900/30 rounded-md p-3">
+                                <i class="fas fa-crown text-red-600 text-2xl"></i>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">KRBTGT Password Age</dt>
+                                    <dd class="text-3xl font-semibold text-gray-900 dark:text-white">{{{{ krbtgtOldPassword.length }}}}</dd>
+                                    <dd class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        Golden Ticket risk
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div v-if="unprotectedPrivilegedUsers.length > 0" @click="navigateToSection('findings', 'protected-users-section')" class="stat-card bg-white dark:bg-gray-800 rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-teal-100 dark:bg-teal-900/30 rounded-md p-3">
+                                <i class="fas fa-shield-alt text-teal-600 text-2xl"></i>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Privileged Users</dt>
+                                    <dd class="text-3xl font-semibold text-gray-900 dark:text-white">{{{{ unprotectedPrivilegedUsers.length }}}}</dd>
+                                    <dd class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        Not in Protected Users
                                     </dd>
                                 </dl>
                             </div>
@@ -774,8 +820,12 @@ class DashboardGenerator:
                             Attackers can request rogue certificates for domain administrators or other high-privilege accounts, achieving persistent domain compromise without account credentials.
                         </p>
                         <h3 class="font-semibold text-orange-800 dark:text-orange-200 mb-2">🔓 Exploitation Method</h3>
+                        <p class="text-orange-700 dark:text-orange-300 text-sm mb-3">
+                            Tools like <a href="https://github.com/ly4k/Certipy" target="_blank" class="tool-link">Certipy</a> or <a href="https://github.com/GhostPack/Certify" target="_blank" class="tool-link">Certify</a> identify vulnerable templates. Attackers request certificates with elevated permissions, then authenticate using the certificate to obtain TGTs or NTLM hashes.
+                        </p>
+                        <h3 class="font-semibold text-orange-800 dark:text-orange-200 mb-2">💡 Remediation</h3>
                         <p class="text-orange-700 dark:text-orange-300 text-sm">
-                            Tools like Certipy or Certify identify vulnerable templates. Attackers request certificates with elevated permissions, then authenticate using the certificate to obtain TGTs or NTLM hashes.
+                            <strong>Secure template permissions:</strong> Remove enrollment rights from Domain Users/Authenticated Users. Enable Manager Approval for high-risk templates. Set "This number of authorized signatures" to ≥1 for ESC1. Disable "Enrollee Supplies Subject" or require manager approval. Regularly audit certificate templates against ESC vulnerabilities using <a href="https://github.com/GhostPack/Certify" target="_blank" class="tool-link">Certify</a>, <a href="https://github.com/ly4k/Certipy" target="_blank" class="tool-link">Certipy</a> or <a href="https://github.com/TrimarcJake/Locksmith" target="_blank" class="tool-link">Locksmith</a>.
                         </p>
                     </div>
                     <div class="table-container">
@@ -848,8 +898,12 @@ class DashboardGenerator:
                             Any domain user can request TGS tickets for these accounts and perform offline password cracking without raising alerts. Weak or old passwords are particularly vulnerable.
                         </p>
                         <h3 class="font-semibold text-purple-800 dark:text-purple-200 mb-2">🔓 Exploitation Method</h3>
-                        <p class="text-purple-700 dark:text-purple-300 text-sm">
+                        <p class="text-purple-700 dark:text-purple-300 text-sm mb-3">
                             Tools: Rubeus, Invoke-Kerberoast, GetUserSPNs.py. Request TGS tickets, extract to disk, crack with Hashcat/John. Success = service account compromise.
+                        </p>
+                        <h3 class="font-semibold text-purple-800 dark:text-purple-200 mb-2">💡 Remediation</h3>
+                        <p class="text-purple-700 dark:text-purple-300 text-sm">
+                            <strong>Use strong passwords (25+ characters) or better gMSA:</strong> Service accounts should use Group Managed Service Accounts (gMSA) which auto-rotate passwords. For standard accounts, enforce minimum 25-character passwords, rotate every 90 days, and implement least privilege. Remove unnecessary SPNs from user accounts.
                         </p>
                     </div>
                     <div class="table-container">
@@ -929,8 +983,12 @@ class DashboardGenerator:
                             No authentication required - attackers can request AS-REP messages for these accounts without valid credentials and perform offline brute-force attacks.
                         </p>
                         <h3 class="font-semibold text-pink-800 dark:text-pink-200 mb-2">🔓 Exploitation Method</h3>
-                        <p class="text-pink-700 dark:text-pink-300 text-sm">
+                        <p class="text-pink-700 dark:text-pink-300 text-sm mb-3">
                             Tools: Rubeus, GetNPUsers.py. Request AS-REP for target accounts, extract encrypted portion, crack offline with Hashcat format 18200 or John.
+                        </p>
+                        <h3 class="font-semibold text-pink-800 dark:text-pink-200 mb-2">💡 Remediation</h3>
+                        <p class="text-pink-700 dark:text-pink-300 text-sm">
+                            <strong>Enable Kerberos pre-authentication:</strong> Remove "Do not require Kerberos preauthentication" flag from all user accounts unless absolutely necessary for legacy applications. For required exceptions, enforce strong passwords (25+ characters), monitor for AS-REP requests, and consider isolating these accounts to restricted network segments.
                         </p>
                     </div>
                     <div class="table-container">
@@ -1010,8 +1068,12 @@ class DashboardGenerator:
                             Instant account compromise without cracking. Attackers simply read user attributes to obtain valid credentials, enabling lateral movement and privilege escalation.
                         </p>
                         <h3 class="font-semibold text-red-800 dark:text-red-200 mb-2">🔓 Exploitation Method</h3>
-                        <p class="text-red-700 dark:text-red-300 text-sm">
+                        <p class="text-red-700 dark:text-red-300 text-sm mb-3">
                             LDAP queries or tools like BloodHound/PowerView enumerate user descriptions containing password patterns. Direct login with discovered credentials.
+                        </p>
+                        <h3 class="font-semibold text-red-800 dark:text-red-200 mb-2">💡 Remediation</h3>
+                        <p class="text-red-700 dark:text-red-300 text-sm">
+                            <strong>Immediately remove all passwords from user attributes:</strong> Clear 'description' and 'info' fields of all password-like strings. Never store secrets in LDAP attributes again. Force password resets for affected accounts. Implement security awareness training about proper credential storage. Regularly audit user attributes using scripts to detect and prevent future occurrences.
                         </p>
                     </div>
                     <div class="table-container">
@@ -1064,8 +1126,12 @@ class DashboardGenerator:
                             Compromised systems with readable LAPS passwords grant local administrator access, enabling credential dumping, persistence mechanisms, and lateral movement across the environment.
                         </p>
                         <h3 class="font-semibold text-indigo-800 dark:text-indigo-200 mb-2">🔓 Exploitation Method</h3>
-                        <p class="text-indigo-700 dark:text-indigo-300 text-sm">
+                        <p class="text-indigo-700 dark:text-indigo-300 text-sm mb-3">
                             Query AD attributes ms-Mcs-AdmPwd and ms-Mcs-AdmPwdExpirationTime. Tools: LAPSToolkit, PowerView. Use retrieved passwords for PSExec/WMI/RDP access.
+                        </p>
+                        <h3 class="font-semibold text-indigo-800 dark:text-indigo-200 mb-2">💡 Remediation</h3>
+                        <p class="text-indigo-700 dark:text-indigo-300 text-sm">
+                            <strong>Restrict LAPS password read permissions:</strong> Only designated IT admin groups should have read access to ms-Mcs-AdmPwd attribute. Remove "All Extended Rights" and grant only specific LAPS read permissions to authorized security groups. Regularly audit permissions using AccessChk or custom scripts. Consider implementing LAPS password rotation to limit exposure window.
                         </p>
                     </div>
                     <div class="table-container">
@@ -1147,6 +1213,109 @@ class DashboardGenerator:
                     </div>
                 </div>
 
+                <!-- KRBTGT Password Rotation -->
+                <div id="krbtgt-section" v-if="krbtgtOldPassword.length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                        <i class="fas fa-crown text-red-600"></i> KRBTGT Password Rotation ({{{{ krbtgtOldPassword.length }}}})
+                    </h2>
+                    <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 mb-6">
+                        <h3 class="font-semibold text-red-800 dark:text-red-200 mb-2">🎯 Issue & Impact</h3>
+                        <p class="text-red-700 dark:text-red-300 text-sm mb-3">
+                            The KRBTGT account password has not been rotated in over 365 days. This account is used to encrypt and sign all Kerberos tickets in the domain. A compromised KRBTGT password hash enables Golden Ticket attacks, providing persistent, undetectable domain dominance.
+                        </p>
+                        <h3 class="font-semibold text-red-800 dark:text-red-200 mb-2">⚔️ Attacker Benefit</h3>
+                        <p class="text-red-700 dark:text-red-300 text-sm mb-3">
+                            With the KRBTGT hash, attackers can forge Kerberos Ticket Granting Tickets (TGTs) for any user, including Domain Admins. These Golden Tickets remain valid even after password resets, providing persistent backdoor access. Detection is nearly impossible as forged tickets appear legitimate to all domain systems.
+                        </p>
+                        <h3 class="font-semibold text-red-800 dark:text-red-200 mb-2">🔓 Exploitation Method</h3>
+                        <p class="text-red-700 dark:text-red-300 text-sm mb-3">
+                            Tools: Mimikatz, Rubeus, Impacket's ticketer.py. Once KRBTGT hash is obtained (via DCSync or DC compromise), attackers craft Golden Tickets with arbitrary privileges. Tickets work across all domain resources without re-authentication. Old KRBTGT passwords that haven't been rotated remain valid indefinitely.
+                        </p>
+                        <h3 class="font-semibold text-red-800 dark:text-red-200 mb-2">💡 Remediation</h3>
+                        <p class="text-red-700 dark:text-red-300 text-sm">
+                            <strong>Rotate KRBTGT password twice</strong> with a 10-hour wait between rotations to invalidate all existing tickets. Use Microsoft's official script or KRBTGT Reset Toolkit. Establish a regular rotation schedule every 180 days and rotate immediately twice after any suspected compromise.
+                        </p>
+                    </div>
+                    <div class="table-container">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead>
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Account Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Password Last Set</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Password Age (days)</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Risk</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                <tr v-for="account in krbtgtOldPassword" :key="account['SAM Account Name'] || account.SAMAccountName || account.UserName || account.User">
+                                    <td class="px-6 py-4 whitespace-nowrap font-medium">{{{{ account['SAM Account Name'] || account.SAMAccountName || account.UserName || account.User || 'krbtgt' }}}}</td>
+                                    <td class="px-6 py-4">{{{{ account['Password Last Set'] || account.PasswordLastSet || 'N/A' }}}}</td>
+                                    <td class="px-6 py-4">
+                                        <span :class="parseInt(account['Password Age (days)']) > 730 ? 'badge badge-critical' : 'badge badge-high'">
+                                            {{{{ account['Password Age (days)'] }}}} days
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="badge badge-critical">GOLDEN TICKET RISK</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Unprotected Privileged Users -->
+                <div id="protected-users-section" v-if="unprotectedPrivilegedUsers.length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                        <i class="fas fa-shield-alt text-teal-600"></i> Unprotected Privileged Users ({{{{ unprotectedPrivilegedUsers.length }}}})
+                    </h2>
+                    <div class="bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-500 p-4 mb-6">
+                        <h3 class="font-semibold text-teal-800 dark:text-teal-200 mb-2">🎯 Issue & Impact</h3>
+                        <p class="text-teal-700 dark:text-teal-300 text-sm mb-3">
+                            Privileged accounts (Domain Admins, Enterprise Admins, Administrators) not in the Protected Users security group lack critical protections against credential theft attacks. This group enforces non-delegable credentials, NTLMv2-only authentication, Kerberos AES encryption, and restrictions on credential caching.
+                        </p>
+                        <h3 class="font-semibold text-teal-800 dark:text-teal-200 mb-2">⚔️ Attacker Benefit</h3>
+                        <p class="text-teal-700 dark:text-teal-300 text-sm mb-3">
+                            Without Protected Users protections, privileged accounts are vulnerable to Pass-the-Hash, Pass-the-Ticket, credential delegation abuse, and offline attacks on weak/legacy encryption. Compromising these accounts grants domain-wide control.
+                        </p>
+                        <h3 class="font-semibold text-teal-800 dark:text-teal-200 mb-2">🔓 Exploitation Method</h3>
+                        <p class="text-teal-700 dark:text-teal-300 text-sm mb-3">
+                            Tools: Mimikatz (sekurlsa::logonpasswords, sekurlsa::tickets), Rubeus, Impacket. Extract credentials from LSASS memory, perform Pass-the-Hash/Pass-the-Ticket attacks. Unconstrained/constrained delegation allows ticket theft. RC4 encryption susceptible to offline cracking.
+                        </p>
+                        <h3 class="font-semibold text-teal-800 dark:text-teal-200 mb-2">💡 Remediation</h3>
+                        <p class="text-teal-700 dark:text-teal-300 text-sm">
+                            <strong>Add privileged accounts to Protected Users group:</strong> For Windows Server 2012 R2+ domains, add Domain Admins, Enterprise Admins, and other Tier 0 accounts to the "Protected Users" group. This enforces: no NTLM authentication (Kerberos only), no DES/RC4 encryption, no credential delegation, no password caching. Test compatibility before deployment as some legacy applications may break.
+                        </p>
+                    </div>
+                    <div class="table-container">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead>
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">SAM Account Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Last Logon</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Risk Level</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                <tr v-for="user in unprotectedPrivilegedUsers" :key="user['SAM Account Name']">
+                                    <td class="px-6 py-4 whitespace-nowrap font-medium">{{{{ user['SAM Account Name'] }}}}</td>
+                                    <td class="px-6 py-4">{{{{ user.Name || 'N/A' }}}}</td>
+                                    <td class="px-6 py-4 text-sm">{{{{ user.Status || 'N/A' }}}}</td>
+                                    <td class="px-6 py-4 text-sm">{{{{ user['Last Logon'] || 'Never' }}}}</td>
+                                    <td class="px-6 py-4">
+                                        <span v-if="user['Risk Level'] === 'CRITICAL' || user['Risk Level'] === 'Critical'" class="badge badge-critical">CRITICAL</span>
+                                        <span v-else-if="user['Risk Level'] === 'HIGH' || user['Risk Level'] === 'High'" class="badge badge-high">HIGH</span>
+                                        <span v-else-if="user['Risk Level'] === 'MEDIUM' || user['Risk Level'] === 'Medium'" class="badge badge-medium">MEDIUM</span>
+                                        <span v-else class="badge badge-low">{{{{ user['Risk Level'] || 'LOW' }}}}</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <!-- Password Policy Analysis -->
                 <div id="password-policy-section" v-if="passwordPolicy.length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                     <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
@@ -1162,8 +1331,12 @@ class DashboardGenerator:
                             Weak policies enable password spraying attacks, where attackers try common passwords against many accounts. Long password ages mean compromised passwords remain valid indefinitely. Weak lockout thresholds allow unlimited brute-force attempts.
                         </p>
                         <h3 class="font-semibold text-orange-800 dark:text-orange-200 mb-2">🔓 Exploitation Method</h3>
-                        <p class="text-orange-700 dark:text-orange-300 text-sm">
+                        <p class="text-orange-700 dark:text-orange-300 text-sm mb-3">
                             Tools: Hydra, Medusa, CrackMapExec. Attackers enumerate users, spray common passwords, escalate with compromised credentials. No complexity = simple passwords work.
+                        </p>
+                        <h3 class="font-semibold text-orange-800 dark:text-orange-200 mb-2">💡 Remediation</h3>
+                        <p class="text-orange-700 dark:text-orange-300 text-sm">
+                            <strong>Implement CIS-compliant password policy:</strong> Minimum 14 characters, maximum age 365 days (90 for privileged accounts), password history 24, lockout threshold 5 attempts, lockout duration 15 minutes. Enable password complexity requirements. Consider passphrase policy over traditional complexity. Implement Fine-Grained Password Policies (FGPP) for privileged accounts with stricter requirements.
                         </p>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1722,6 +1895,12 @@ class DashboardGenerator:
                 forest() {{
                     return csvData.Forest || [];
                 }},
+                krbtgt() {{
+                    return csvData.krbtgt || [];
+                }},
+                protectedGroups() {{
+                    return csvData.ProtectedGroups || [];
+                }},
                 
                 aboutInfo() {{
                     const about = csvData.AboutPyADRecon || [];
@@ -1848,6 +2027,24 @@ class DashboardGenerator:
                 
                 lapsReadable() {{
                     return csvData.LAPS ? csvData.LAPS.filter(l => l.Readable === 'True' || l.Readable === 'TRUE') : [];
+                }},
+                
+                krbtgtOldPassword() {{
+                    return this.krbtgt.filter(k => {{
+                        const pwdAge = parseInt(k['Password Age (days)']);
+                        return !isNaN(pwdAge) && pwdAge > 180;
+                    }});
+                }},
+                
+                unprotectedPrivilegedUsers() {{
+                    return this.protectedGroups.filter(u => {{
+                        // Users not in Protected Users group with Risk Level > Low
+                        const notInProtectedUsers = u['In Protected Users Group'] === 'No' || u['In Protected Users Group'] === 'NO';
+                        const isUser = u.Type === 'User' || u.Type === 'USER';
+                        const riskLevel = (u['Risk Level'] || '').toUpperCase();
+                        const highRisk = riskLevel === 'MEDIUM' || riskLevel === 'HIGH' || riskLevel === 'CRITICAL';
+                        return isUser && notInProtectedUsers && highRisk;
+                    }});
                 }},
                 
                 lapsEnabled() {{
@@ -2782,8 +2979,7 @@ class DashboardGenerator:
         with open(self.output_file, 'w', encoding='utf-8') as f:
             f.write(html_content)
         
-        print(f"[+] Dashboard generated: {self.output_file}")
-        print(f"    Open it in your browser to view the interactive report")
+        print(f"[INFO] [+] Dashboard generated: {self.output_file}")
         return True
 
 
