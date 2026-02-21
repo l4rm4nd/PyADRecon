@@ -50,6 +50,8 @@ options:
   --version             show program's version number and exit  
   --generate-excel-from CSV_DIR
                         Generate Excel report from CSV directory (standalone mode, no AD connection needed)
+  --generate-dashboard-from CSV_DIR
+                        Generate HTML dashboard from existing CSV files (standalone mode)
   -dc, --domain-controller DOMAIN_CONTROLLER
                         Domain Controller IP or hostname
   -u, --username USERNAME
