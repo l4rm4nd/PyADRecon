@@ -1,3 +1,10 @@
+## [0.12.4](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.3...v0.12.4) (2026-02-21)
+
+
+### Bug Fixes
+
+* show detected cleartext pws in description/info fields ([d681224](https://github.com/l4rm4nd/PyADRecon/commit/d6812246687d1c73af910dbc906b3a843cf7a7f1))
+
 ## [0.12.3](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.2...v0.12.3) (2026-02-21)
 
 
@@ -25,11 +32,4 @@
 ### Features
 
 * Implement dashboard generation toggle in arguments ([887ea40](https://github.com/l4rm4nd/PyADRecon/commit/887ea403d7a30a21bbc8feaa67d58eccee88302d))
-
-## [0.11.14](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.13...v0.11.14) (2026-02-20)
-
-
-### Bug Fixes
-
-* initialize sid mappings earlier to support individual --collect adcs runs ([b036a8f](https://github.com/l4rm4nd/PyADRecon/commit/b036a8fde34eae88cb14e570f9feb92a4a0e0fb3))
 
