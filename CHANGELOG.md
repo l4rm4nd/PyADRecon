@@ -1,3 +1,10 @@
+## [0.12.5](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.4...v0.12.5) (2026-02-21)
+
+
+### Bug Fixes
+
+* counter for security findings in navigation ([b856c3d](https://github.com/l4rm4nd/PyADRecon/commit/b856c3d4395b093cb0545c8ed716aaed3f868223))
+
 ## [0.12.4](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.3...v0.12.4) (2026-02-21)
 
 
@@ -25,11 +32,4 @@
 ### Bug Fixes
 
 * column sorting bug ([d160142](https://github.com/l4rm4nd/PyADRecon/commit/d160142e94d919421f5996c57e83187ac217a70b))
-
-## [0.12.0](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.14...v0.12.0) (2026-02-21)
-
-
-### Features
-
-* Implement dashboard generation toggle in arguments ([887ea40](https://github.com/l4rm4nd/PyADRecon/commit/887ea403d7a30a21bbc8feaa67d58eccee88302d))
 
