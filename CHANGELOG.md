@@ -1,3 +1,10 @@
+## [0.12.1](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.0...v0.12.1) (2026-02-21)
+
+
+### Bug Fixes
+
+* column sorting bug ([d160142](https://github.com/l4rm4nd/PyADRecon/commit/d160142e94d919421f5996c57e83187ac217a70b))
+
 ## [0.12.0](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.14...v0.12.0) (2026-02-21)
 
 
@@ -25,11 +32,4 @@
 ### Bug Fixes
 
 * add forest_root_dn attribute to track forest root separately ([818acc8](https://github.com/l4rm4nd/PyADRecon/commit/818acc8ce3bb26c1dd05ddd5b763cd8da7282339))
-
-## [0.11.11](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.10...v0.11.11) (2026-02-19)
-
-
-### Bug Fixes
-
-* ace parsing errors ([20bc72f](https://github.com/l4rm4nd/PyADRecon/commit/20bc72f3ee97b40fa396030b9e49ea2a504740ef))
 
