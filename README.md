@@ -184,7 +184,7 @@ Though, you can freely select your own collection of modules to run:
 
 ## HTML Dashboard
 
-PyADRecon-ADWS will automatically create an HTML dashboard with important stats and security findings.
+PyADRecon will automatically create an HTML dashboard with important stats and security findings.
 
 You may disable HTML dashboard generation via `--no-dashboard`.
 
