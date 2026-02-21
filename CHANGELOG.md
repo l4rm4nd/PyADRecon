@@ -1,3 +1,10 @@
+## [0.12.0](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.14...v0.12.0) (2026-02-21)
+
+
+### Features
+
+* Implement dashboard generation toggle in arguments ([887ea40](https://github.com/l4rm4nd/PyADRecon/commit/887ea403d7a30a21bbc8feaa67d58eccee88302d))
+
 ## [0.11.14](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.13...v0.11.14) (2026-02-20)
 
 
@@ -25,11 +32,4 @@
 ### Bug Fixes
 
 * ace parsing errors ([20bc72f](https://github.com/l4rm4nd/PyADRecon/commit/20bc72f3ee97b40fa396030b9e49ea2a504740ef))
-
-## [0.11.10](https://github.com/l4rm4nd/PyADRecon/compare/v0.11.9...v0.11.10) (2026-02-19)
-
-
-### Bug Fixes
-
-* add missing distinguished name ([2efe17a](https://github.com/l4rm4nd/PyADRecon/commit/2efe17a3e25415679e743c621874c6bf07df83fa))
 
