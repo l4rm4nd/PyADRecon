@@ -89,6 +89,14 @@ except ImportError:
     OPENPYXL_AVAILABLE = False
     print("[*] openpyxl not available - Excel export disabled")
 
+# Try to import dashboard generator
+DASHBOARD_AVAILABLE = False
+try:
+    from dashboard_generator import generate_dashboard
+    DASHBOARD_AVAILABLE = True
+except ImportError:
+    DASHBOARD_AVAILABLE = False
+
 if not KERBEROS_AVAILABLE:
     print("[*] gssapi/winkerberos not available - Kerberos authentication disabled")
     print("[*] Install with: pip install gssapi (Linux) or pip install winkerberos (Windows)")
@@ -7064,6 +7072,8 @@ Examples:
                        help='Spoof workstation name for NTLM authentication (bypasses userWorkstations restrictions)')
     parser.add_argument('--no-excel', action='store_true',
                        help='Skip Excel report generation')
+    parser.add_argument('--no-dashboard', action='store_true',
+                       help='Skip interactive HTML dashboard generation')
     parser.add_argument('-v', '--verbose', action='store_true',
                        help='Verbose output')
 
@@ -7193,6 +7203,17 @@ Examples:
             if not args.no_excel and OPENPYXL_AVAILABLE:
                 domain_name = config.domain or dn_to_fqdn(recon.base_dn)
                 recon.export_xlsx(output_dir, domain_name.replace('.', '_'))
+
+            # Generate interactive dashboard if requested
+            if not args.no_dashboard:
+                if 'default' in collect_modules or 'all' in collect_modules or not collect_modules:
+                    if DASHBOARD_AVAILABLE:
+                        logger.info("[*] Generating interactive HTML dashboard...")
+                        dashboard_file = os.path.join(output_dir, 'dashboard.html')
+                        if generate_dashboard(csv_dir, dashboard_file):
+                            logger.info(f"[+] Dashboard: {os.path.abspath(dashboard_file)}")
+                    else:
+                        logger.warning("[!] Dashboard generation not available (dashboard_generator.py not found)")
 
             logger.info(f"[*] Output Directory: {os.path.abspath(output_dir)}")
             logger.info("[*] Completed.")
