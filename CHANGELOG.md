@@ -1,3 +1,10 @@
+## [0.12.6](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.5...v0.12.6) (2026-02-21)
+
+
+### Bug Fixes
+
+* hide non-issue tiles and add maq finding ([9929546](https://github.com/l4rm4nd/PyADRecon/commit/9929546c58bfe7d29d70e0ecf7be045bf244b2be))
+
 ## [0.12.5](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.4...v0.12.5) (2026-02-21)
 
 
@@ -25,11 +32,4 @@
 ### Bug Fixes
 
 * Update Dockerfile ([783e6ea](https://github.com/l4rm4nd/PyADRecon/commit/783e6eab3f3396107f52c1183a135efaa5766561))
-
-## [0.12.1](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.0...v0.12.1) (2026-02-21)
-
-
-### Bug Fixes
-
-* column sorting bug ([d160142](https://github.com/l4rm4nd/PyADRecon/commit/d160142e94d919421f5996c57e83187ac217a70b))
 
