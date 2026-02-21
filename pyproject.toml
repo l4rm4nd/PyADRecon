@@ -32,7 +32,7 @@ Issues = "https://github.com/l4rm4nd/PyADRecon/issues"
 pyadrecon = "pyadrecon:main"
 
 [tool.setuptools]
-py-modules = ["pyadrecon"]
+py-modules = ["pyadrecon", "dashboard_generator"]
 
 # Version comes from Git tags like v0.11.0. CI will build from the tag ref.
 [tool.setuptools_scm]
