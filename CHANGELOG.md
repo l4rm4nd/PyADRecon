@@ -1,3 +1,10 @@
+## [0.12.12](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.11...v0.12.12) (2026-02-21)
+
+
+### Bug Fixes
+
+* add --generate-dashboard-from support ([e4905ce](https://github.com/l4rm4nd/PyADRecon/commit/e4905ce55616ea13e480f9c3c299542f07c3d312))
+
 ## [0.12.11](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.10...v0.12.11) (2026-02-21)
 
 
@@ -25,11 +32,4 @@
 ### Bug Fixes
 
 * add manager approval to dashboard ([1716844](https://github.com/l4rm4nd/PyADRecon/commit/17168444a95083828ddcf8e605f398f345562f9a))
-
-## [0.12.7](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.6...v0.12.7) (2026-02-21)
-
-
-### Bug Fixes
-
-* add laps readers to table and adjust maq text ([2586914](https://github.com/l4rm4nd/PyADRecon/commit/25869149ce6a8c16923b3cace2bcb0e1e5db5025))
 
