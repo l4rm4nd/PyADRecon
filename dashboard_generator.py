@@ -8,7 +8,9 @@ import os
 import csv
 import json
 import base64
-from datetime import datetime
+import urllib.request
+import urllib.error
+from datetime import datetime, timedelta
 from pathlib import Path
 
 
@@ -629,6 +631,23 @@ class DashboardGenerator:
                                     <dd class="text-3xl font-semibold text-gray-900 dark:text-white">{{{{ vulnerableGMSA.length }}}}</dd>
                                     <dd class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                         Permission issues
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="legacyOperatingSystems.length > 0" @click="navigateToSection('findings', 'legacy-os-section')" class="stat-card bg-white dark:bg-gray-800 rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-red-100 dark:bg-red-900/30 rounded-md p-3">
+                                <i class="fas fa-desktop text-red-600 text-2xl"></i>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Legacy OS Systems</dt>
+                                    <dd class="text-3xl font-semibold text-gray-900 dark:text-white">{{{{ legacyOperatingSystems.length }}}}</dd>
+                                    <dd class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        Unpatched or End-of-Life (EOL)
                                     </dd>
                                 </dl>
                             </div>
@@ -1746,7 +1765,7 @@ class DashboardGenerator:
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                <tr v-for="account in unconstrainedDelegationAccounts" :key="account.DN">
+                                <tr v-for="account in paginatedUnconstrainedDelegation" :key="account.DN">
                                     <td class="px-6 py-4">
                                         <span v-if="account.Type === 'User'" class="badge badge-info">User</span>
                                         <span v-else class="badge badge-purple">Computer</span>
@@ -1784,9 +1803,24 @@ class DashboardGenerator:
                             </tbody>
                         </table>
                     </div>
+                    <div v-if="unconstrainedDelegationAccounts.length > itemsPerPage" class="flex justify-between items-center py-4">
+                        <div class="text-sm text-gray-500 dark:text-gray-400">
+                            Showing {{{{ ((unconstrainedDelegationPage - 1) * itemsPerPage) + 1 }}}} to {{{{ Math.min(unconstrainedDelegationPage * itemsPerPage, unconstrainedDelegationAccounts.length) }}}} of {{{{ unconstrainedDelegationAccounts.length }}}} accounts
+                        </div>
+                        <div class="flex gap-2">
+                            <button @click="unconstrainedDelegationPage = Math.max(1, unconstrainedDelegationPage - 1)" :disabled="unconstrainedDelegationPage === 1" 
+                                    class="px-3 py-1 rounded bg-blue-600 text-white disabled:bg-gray-400">
+                                <i class="fas fa-chevron-left"></i> Previous
+                            </button>
+                            <span class="px-3 py-1">Page {{{{ unconstrainedDelegationPage }}}} of {{{{ Math.ceil(unconstrainedDelegationAccounts.length / itemsPerPage) }}}}</span>
+                            <button @click="unconstrainedDelegationPage = Math.min(Math.ceil(unconstrainedDelegationAccounts.length / itemsPerPage), unconstrainedDelegationPage + 1)" 
+                                    :disabled="unconstrainedDelegationPage >= Math.ceil(unconstrainedDelegationAccounts.length / itemsPerPage)"
+                                    class="px-3 py-1 rounded bg-blue-600 text-white disabled:bg-gray-400">
+                                Next <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
-
-                <!-- Constrained Delegation Section -->
                 <div id="constrained-delegation-section" v-if="constrainedDelegationRisks.length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                     <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
                         <i class="fas fa-exchange-alt text-orange-600"></i> Constrained Delegation Accounts ({{{{ constrainedDelegationRisks.length }}}})
@@ -1843,7 +1877,7 @@ class DashboardGenerator:
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                <tr v-for="account in constrainedDelegationRisks" :key="account.DN">
+                                <tr v-for="account in paginatedConstrainedDelegation" :key="account.DN">
                                     <td class="px-6 py-4">
                                         <span v-if="account.Type === 'User'" class="badge badge-info">User</span>
                                         <span v-else class="badge badge-purple">Computer</span>
@@ -1885,9 +1919,24 @@ class DashboardGenerator:
                             </tbody>
                         </table>
                     </div>
+                    <div v-if="constrainedDelegationRisks.length > itemsPerPage" class="flex justify-between items-center py-4">
+                        <div class="text-sm text-gray-500 dark:text-gray-400">
+                            Showing {{{{ ((constrainedDelegationPage - 1) * itemsPerPage) + 1 }}}} to {{{{ Math.min(constrainedDelegationPage * itemsPerPage, constrainedDelegationRisks.length) }}}} of {{{{ constrainedDelegationRisks.length }}}} accounts
+                        </div>
+                        <div class="flex gap-2">
+                            <button @click="constrainedDelegationPage = Math.max(1, constrainedDelegationPage - 1)" :disabled="constrainedDelegationPage === 1" 
+                                    class="px-3 py-1 rounded bg-blue-600 text-white disabled:bg-gray-400">
+                                <i class="fas fa-chevron-left"></i> Previous
+                            </button>
+                            <span class="px-3 py-1">Page {{{{ constrainedDelegationPage }}}} of {{{{ Math.ceil(constrainedDelegationRisks.length / itemsPerPage) }}}}</span>
+                            <button @click="constrainedDelegationPage = Math.min(Math.ceil(constrainedDelegationRisks.length / itemsPerPage), constrainedDelegationPage + 1)" 
+                                    :disabled="constrainedDelegationPage >= Math.ceil(constrainedDelegationRisks.length / itemsPerPage)"
+                                    class="px-3 py-1 rounded bg-blue-600 text-white disabled:bg-gray-400">
+                                Next <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
-
-                <!-- SID History Section -->
                 <div id="sidhistory-section" v-if="objectsWithSIDHistory.length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                     <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
                         <i class="fas fa-history text-purple-600"></i> Objects with SID History ({{{{ objectsWithSIDHistory.length }}}})
@@ -1935,7 +1984,7 @@ class DashboardGenerator:
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                <tr v-for="obj in objectsWithSIDHistory" :key="obj.DN">
+                                <tr v-for="obj in paginatedSIDHistory" :key="obj.DN">
                                     <td class="px-6 py-4">
                                         <span v-if="obj.Type === 'User'" class="badge badge-info">User</span>
                                         <span v-else-if="obj.Type === 'Computer'" class="badge badge-purple">Computer</span>
@@ -1963,9 +2012,24 @@ class DashboardGenerator:
                             </tbody>
                         </table>
                     </div>
+                    <div v-if="objectsWithSIDHistory.length > itemsPerPage" class="flex justify-between items-center py-4">
+                        <div class="text-sm text-gray-500 dark:text-gray-400">
+                            Showing {{{{ ((sidHistoryPage - 1) * itemsPerPage) + 1 }}}} to {{{{ Math.min(sidHistoryPage * itemsPerPage, objectsWithSIDHistory.length) }}}} of {{{{ objectsWithSIDHistory.length }}}} objects
+                        </div>
+                        <div class="flex gap-2">
+                            <button @click="sidHistoryPage = Math.max(1, sidHistoryPage - 1)" :disabled="sidHistoryPage === 1" 
+                                    class="px-3 py-1 rounded bg-blue-600 text-white disabled:bg-gray-400">
+                                <i class="fas fa-chevron-left"></i> Previous
+                            </button>
+                            <span class="px-3 py-1">Page {{{{ sidHistoryPage }}}} of {{{{ Math.ceil(objectsWithSIDHistory.length / itemsPerPage) }}}}</span>
+                            <button @click="sidHistoryPage = Math.min(Math.ceil(objectsWithSIDHistory.length / itemsPerPage), sidHistoryPage + 1)" 
+                                    :disabled="sidHistoryPage >= Math.ceil(objectsWithSIDHistory.length / itemsPerPage)"
+                                    class="px-3 py-1 rounded bg-blue-600 text-white disabled:bg-gray-400">
+                                Next <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
-
-                <!-- Foreign Security Principals Section -->
                 <div id="foreign-principals-section" v-if="foreignSecurityPrincipals.length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                     <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
                         <i class="fas fa-globe text-pink-600"></i> Foreign Security Principals in Privileged Groups ({{{{ foreignSecurityPrincipals.length }}}})
@@ -2010,7 +2074,7 @@ class DashboardGenerator:
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                <tr v-for="fsp in foreignSecurityPrincipals" :key="fsp['Member SID']">
+                                <tr v-for="fsp in paginatedForeignPrincipals" :key="fsp['Member SID']">
                                     <td class="px-6 py-4 font-medium">{{{{ fsp['Group Name'] }}}}</td>
                                     <td class="px-6 py-4">{{{{ fsp['Member Name'] }}}}</td>
                                     <td class="px-6 py-4 text-xs font-mono max-w-xs truncate" :title="fsp['Member SID']">
@@ -2029,9 +2093,24 @@ class DashboardGenerator:
                             </tbody>
                         </table>
                     </div>
+                    <div v-if="foreignSecurityPrincipals.length > itemsPerPage" class="flex justify-between items-center py-4">
+                        <div class="text-sm text-gray-500 dark:text-gray-400">
+                            Showing {{{{ ((foreignPrincipalsPage - 1) * itemsPerPage) + 1 }}}} to {{{{ Math.min(foreignPrincipalsPage * itemsPerPage, foreignSecurityPrincipals.length) }}}} of {{{{ foreignSecurityPrincipals.length }}}} principals
+                        </div>
+                        <div class="flex gap-2">
+                            <button @click="foreignPrincipalsPage = Math.max(1, foreignPrincipalsPage - 1)" :disabled="foreignPrincipalsPage === 1" 
+                                    class="px-3 py-1 rounded bg-blue-600 text-white disabled:bg-gray-400">
+                                <i class="fas fa-chevron-left"></i> Previous
+                            </button>
+                            <span class="px-3 py-1">Page {{{{ foreignPrincipalsPage }}}} of {{{{ Math.ceil(foreignSecurityPrincipals.length / itemsPerPage) }}}}</span>
+                            <button @click="foreignPrincipalsPage = Math.min(Math.ceil(foreignSecurityPrincipals.length / itemsPerPage), foreignPrincipalsPage + 1)" 
+                                    :disabled="foreignPrincipalsPage >= Math.ceil(foreignSecurityPrincipals.length / itemsPerPage)"
+                                    class="px-3 py-1 rounded bg-blue-600 text-white disabled:bg-gray-400">
+                                Next <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
-
-                <!-- gMSA Vulnerabilities Section -->
                 <div id="gmsa-vulnerabilities-section" v-if="vulnerableGMSA.length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                     <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
                         <i class="fas fa-user-cog text-yellow-600"></i> gMSA Misconfigurations ({{{{ vulnerableGMSA.length }}}})
@@ -2076,7 +2155,7 @@ class DashboardGenerator:
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                <tr v-for="gmsa in vulnerableGMSA" :key="gmsa.DN">
+                                <tr v-for="gmsa in paginatedGMSAVuln" :key="gmsa.DN">
                                     <td class="px-6 py-4 font-medium">{{{{ gmsa.Name }}}}</td>
                                     <td class="px-6 py-4 text-sm max-w-xs truncate" :title="gmsa['Allowed To Retrieve']">
                                         {{{{ gmsa['Allowed To Retrieve'] || 'N/A' }}}}
@@ -2095,6 +2174,131 @@ class DashboardGenerator:
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                    <div v-if="vulnerableGMSA.length > itemsPerPage" class="flex justify-between items-center py-4">
+                        <div class="text-sm text-gray-500 dark:text-gray-400">
+                            Showing {{{{ ((gmsaVulnPage - 1) * itemsPerPage) + 1 }}}} to {{{{ Math.min(gmsaVulnPage * itemsPerPage, vulnerableGMSA.length) }}}} of {{{{ vulnerableGMSA.length }}}} gMSAs
+                        </div>
+                        <div class="flex gap-2">
+                            <button @click="gmsaVulnPage = Math.max(1, gmsaVulnPage - 1)" :disabled="gmsaVulnPage === 1" 
+                                    class="px-3 py-1 rounded bg-blue-600 text-white disabled:bg-gray-400">
+                                <i class="fas fa-chevron-left"></i> Previous
+                            </button>
+                            <span class="px-3 py-1">Page {{{{ gmsaVulnPage }}}} of {{{{ Math.ceil(vulnerableGMSA.length / itemsPerPage) }}}}</span>
+                            <button @click="gmsaVulnPage = Math.min(Math.ceil(vulnerableGMSA.length / itemsPerPage), gmsaVulnPage + 1)" 
+                                    :disabled="gmsaVulnPage >= Math.ceil(vulnerableGMSA.length / itemsPerPage)"
+                                    class="px-3 py-1 rounded bg-blue-600 text-white disabled:bg-gray-400">
+                                Next <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="legacy-os-section" v-if="legacyOperatingSystems.length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                        <i class="fas fa-desktop text-red-600"></i> Legacy Operating Systems ({{{{ legacyOperatingSystems.length }}}})
+                    </h2>
+                    <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 mb-6">
+                        <h3 class="font-semibold text-red-800 dark:text-red-200 mb-2">🎯 Issue & Impact</h3>
+                        <p class="text-red-700 dark:text-red-300 text-sm mb-3">
+                            End-of-life (EOL) operating systems no longer receive security updates from Microsoft, leaving known vulnerabilities unpatched indefinitely. Systems flagged here are either already EOL or will reach EOL within 12 months. These systems are prime targets for attackers using publicly available exploits. Legacy systems lack modern security features like Credential Guard, Windows Defender Application Control, and enhanced SMB security.
+                        </p>
+                        <h3 class="font-semibold text-red-800 dark:text-red-200 mb-2">⚔️ Attacker Benefit</h3>
+                        <p class="text-red-700 dark:text-red-300 text-sm mb-3">
+                            EOL systems provide easy entry points with known CVEs and no patches available. Legacy Windows systems lack modern credential protection - NTLM hashes stored in memory are trivial to extract with Mimikatz. These systems can't enforce modern Kerberos protections or use Virtual Secure Mode. Attackers use these as pivot points to compromise the domain, knowing the vulnerabilities won't be patched.
+                        </p>
+                        <h3 class="font-semibold text-red-800 dark:text-red-200 mb-2">🔓 Exploitation Method</h3>
+                        <p class="text-red-700 dark:text-red-300 text-sm mb-3">
+                            Tools: Metasploit (EternalBlue/MS17-010), Mimikatz, Responder, PrintNightmare exploits. Attackers scan for legacy OS versions, exploit unpatched vulnerabilities (SMBv1, Print Spooler, legacy authentication), extract credentials from memory, move laterally using pass-the-hash. Common exploits: EternalBlue (Server 2008), BlueKeep (Windows 7), ZeroLogon (Server 2008/2012), PrintNightmare (all legacy versions). Systems soon reaching EOL face increasing risk as vendors reduce patch frequency.
+                        </p>
+                        <h3 class="font-semibold text-red-800 dark:text-red-200 mb-2">💡 Remediation</h3>
+                        <p class="text-red-700 dark:text-red-300 text-sm">
+                            <strong>Priority-based migration:</strong> CRITICAL (security support ended) - immediate migration required. INFO (EOL within 12 months) - begin migration planning now. Upgrade to Windows 10/11 for workstations and Server 2019/2022/2025 for servers. If immediate migration is not possible: Isolate legacy systems via network segmentation, implement strict firewall rules, disable unnecessary services (especially SMBv1), restrict access to privileged accounts only, monitor aggressively for exploitation attempts. Document business justification for any systems that cannot be upgraded. Note: Systems with 12+ months of security support remaining are not shown here.
+                        </p>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                <tr>
+                                    <th @click="sortLegacyOS('Name')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Computer Name <i v-if="legacyOsSortColumn === 'Name'" :class="legacyOsSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th @click="sortLegacyOS('Operating System')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Operating System <i v-if="legacyOsSortColumn === 'Operating System'" :class="legacyOsSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th @click="sortLegacyOS('EOL Date')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        EOL Date <i v-if="legacyOsSortColumn === 'EOL Date'" :class="legacyOsSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th @click="sortLegacyOS('Days Since EOL')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Days Until/Since EOL <i v-if="legacyOsSortColumn === 'Days Since EOL'" :class="legacyOsSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th @click="sortLegacyOS('EOL Status')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Status <i v-if="legacyOsSortColumn === 'EOL Status'" :class="legacyOsSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th @click="sortLegacyOS('Logon Age (days)')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Last Logon <i v-if="legacyOsSortColumn === 'Logon Age (days)'" :class="legacyOsSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th @click="sortLegacyOS('Risk Level')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Risk <i v-if="legacyOsSortColumn === 'Risk Level'" :class="legacyOsSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                <tr v-for="system in paginatedLegacyOS" :key="system.DN">
+                                    <td class="px-6 py-4">
+                                        <div class="font-medium">{{{{ system.Name }}}}</div>
+                                        <div v-if="system.IPv4Address" class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{{{ system.IPv4Address }}}}</div>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">
+                                        <div>{{{{ system['Operating System'] }}}}</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{{{ system['OS Version'] }}}}</div>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">{{{{ system['EOL Date'] }}}}</td>
+                                    <td class="px-6 py-4">
+                                        <span v-if="system['Days Since EOL'] < 0" class="text-sm text-orange-600 dark:text-orange-400 font-semibold">
+                                            {{{{ Math.abs(system['Days Since EOL']) }}}} days until EOL
+                                        </span>
+                                        <span v-else class="text-sm text-red-600 dark:text-red-400 font-semibold">
+                                            {{{{ system['Days Since EOL'] }}}} days since EOL
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span v-if="system['EOL Status'] === 'End-of-Life'" class="badge badge-critical">End-of-Life</span>
+                                        <span v-else-if="system['EOL Status'] === 'SOON EOL'" class="badge badge-info">SOON EOL</span>
+                                        <span v-else class="badge badge-medium">{{{{ system['EOL Status'] }}}}</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">
+                                        <span v-if="system['Logon Age (days)']" :class="{{'text-red-600 dark:text-red-400 font-semibold': parseInt(system['Logon Age (days)']) < 30}}">
+                                            {{{{ system['Logon Age (days)'] }}}} days ago
+                                        </span>
+                                        <span v-else class="text-gray-500 dark:text-gray-400">Never</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span v-if="system['Risk Level'] === 'CRITICAL'" class="badge badge-critical">CRITICAL</span>
+                                        <span v-else-if="system['Risk Level'] === 'HIGH'" class="badge badge-high">HIGH</span>
+                                        <span v-else-if="system['Risk Level'] === 'MEDIUM'" class="badge badge-medium">MEDIUM</span>
+                                        <span v-else-if="system['Risk Level'] === 'INFO'" class="badge badge-info">INFO</span>
+                                        <span v-else class="badge badge-low">LOW</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div v-if="legacyOperatingSystems.length > itemsPerPage" class="flex justify-between items-center py-4">
+                        <div class="text-sm text-gray-500 dark:text-gray-400">
+                            Showing {{{{ ((legacyOsPage - 1) * itemsPerPage) + 1 }}}} to {{{{ Math.min(legacyOsPage * itemsPerPage, legacyOperatingSystems.length) }}}} of {{{{ legacyOperatingSystems.length }}}} systems
+                        </div>
+                        <div class="flex gap-2">
+                            <button @click="legacyOsPage = Math.max(1, legacyOsPage - 1)" :disabled="legacyOsPage === 1" 
+                                    class="px-3 py-1 rounded bg-blue-600 text-white disabled:bg-gray-400">
+                                <i class="fas fa-chevron-left"></i> Previous
+                            </button>
+                            <span class="px-3 py-1">Page {{{{ legacyOsPage }}}} of {{{{ Math.ceil(legacyOperatingSystems.length / itemsPerPage) }}}}</span>
+                            <button @click="legacyOsPage = Math.min(Math.ceil(legacyOperatingSystems.length / itemsPerPage), legacyOsPage + 1)" 
+                                    :disabled="legacyOsPage >= Math.ceil(legacyOperatingSystems.length / itemsPerPage)"
+                                    class="px-3 py-1 rounded bg-blue-600 text-white disabled:bg-gray-400">
+                                Next <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -2565,7 +2769,7 @@ class DashboardGenerator:
                     lapsPage: 1,
                     vulnCertTemplatePage: 1,
                     cleartextPage: 1,
-                    itemsPerPage: 50,
+                    itemsPerPage: 10,
                     certTemplateFilter: 'all',
                     certTemplateRiskFilter: 'risk-gt-none',
                     userSearch: '',
@@ -2601,6 +2805,14 @@ class DashboardGenerator:
                     foreignPrincipalsSortDirection: 'asc',
                     gmsaVulnSortColumn: null,
                     gmsaVulnSortDirection: 'asc',
+                    legacyOsSortColumn: null,
+                    legacyOsSortDirection: 'asc',
+                    legacyOsPage: 1,
+                    unconstrainedDelegationPage: 1,
+                    constrainedDelegationPage: 1,
+                    sidHistoryPage: 1,
+                    foreignPrincipalsPage: 1,
+                    gmsaVulnPage: 1,
                     tabs: [
                         {{ id: 'overview', label: 'Overview', icon: 'fas fa-home', count: null }},
                         {{ id: 'findings', label: 'Security Findings', icon: 'fas fa-bug', count: null }},
@@ -3002,6 +3214,7 @@ class DashboardGenerator:
                     if (this.objectsWithSIDHistory.length > 0) count++; // SID History
                     if (this.foreignSecurityPrincipals.length > 0) count++; // Foreign Security Principals
                     if (this.vulnerableGMSA.length > 0) count++; // gMSA Misconfigurations
+                    if (this.legacyOperatingSystems.length > 0) count++; // Legacy Operating Systems
                     return count;
                 }},
                 
@@ -3605,6 +3818,459 @@ class DashboardGenerator:
                     }}
                     
                     return vulnerable;
+                }},
+                
+                // 5. LEGACY OPERATING SYSTEMS
+                legacyOperatingSystems() {{
+                    let legacySystems = [];
+                    
+                    // Current date for EOL calculations
+                    const now = new Date();
+                    const twelveMonthsFromNow = new Date(now.getTime() + (365 * 24 * 60 * 60 * 1000));
+                    
+                    // Build number to version mapping
+                    const buildMapping = {{
+                        // Windows 11 builds
+                        '22000': '21H2',
+                        '22621': '22H2',
+                        '22631': '23H2',
+                        '26100': '24H2',
+                        '26200': '25H2',
+                        '28000': '26H1',
+                        // Windows 10 builds
+                        '10240': '1507',
+                        '10586': '1511',
+                        '14393': '1607',
+                        '15063': '1703',
+                        '16299': '1709',
+                        '17134': '1803',
+                        '17763': '1809',
+                        '18362': '1903',
+                        '18363': '1909',
+                        '19041': '2004',
+                        '19042': '20H2',
+                        '19043': '21H1',
+                        '19044': '21H2',
+                        '19045': '22H2'
+                    }};
+                    
+                    // EOL database by OS and edition
+                    const eolDatabase = {{
+                        // Windows Server (by build number)
+                        'Server 2003': {{ securityEnd: '2015-07-14', esuEnd: null }},
+                        'Server 2008': {{ securityEnd: '2020-01-14', esuEnd: '2023-01-10' }},
+                        'Server 2008 R2': {{ securityEnd: '2020-01-14', esuEnd: '2023-01-10' }},
+                        'Server 2012': {{ securityEnd: '2023-10-10', esuEnd: '2026-10-13' }},
+                        'Server 2012 R2': {{ securityEnd: '2023-10-10', esuEnd: '2026-10-13' }},
+                        'Server 2016': {{ securityEnd: '2027-01-12', esuEnd: null }},
+                        // Server 2019 and later not included (support until 2029+)
+                        
+                        // Windows client OS (by version and edition)
+                        'XP': {{ securityEnd: '2014-04-08', esuEnd: null }},
+                        'Vista': {{ securityEnd: '2017-04-11', esuEnd: null }},
+                        '7': {{ securityEnd: '2020-01-14', esuEnd: null }},
+                        '8': {{ securityEnd: '2016-01-12', esuEnd: null }},
+                        '8.1': {{ securityEnd: '2023-01-10', esuEnd: null }},
+                        
+                        // Windows 10 by version
+                        '10-1507': {{ securityEnd: '2025-10-14', esuEnd: null }},
+                        '10-1507-E-LTSC': {{ securityEnd: '2025-10-14', esuEnd: null }},
+                        '10-1511': {{ securityEnd: '2017-10-10', esuEnd: null }},
+                        '10-1607': {{ securityEnd: '2026-10-13', esuEnd: null }},
+                        '10-1607-E-LTSC': {{ securityEnd: '2026-10-13', esuEnd: null }},
+                        '10-1703': {{ securityEnd: '2019-10-08', esuEnd: null }},
+                        '10-1709': {{ securityEnd: '2020-10-13', esuEnd: null }},
+                        '10-1803': {{ securityEnd: '2021-05-11', esuEnd: null }},
+                        '10-1809': {{ securityEnd: '2021-05-11', esuEnd: null }},
+                        '10-1809-E-LTSC': {{ securityEnd: '2029-01-09', esuEnd: null }}, // Still supported
+                        '10-1903': {{ securityEnd: '2020-12-08', esuEnd: null }},
+                        '10-1909': {{ securityEnd: '2022-05-10', esuEnd: null }},
+                        '10-2004': {{ securityEnd: '2021-12-14', esuEnd: null }},
+                        '10-20H2': {{ securityEnd: '2023-05-09', esuEnd: null }},
+                        '10-21H1': {{ securityEnd: '2022-12-13', esuEnd: null }},
+                        '10-21H2': {{ securityEnd: '2024-06-11', esuEnd: null }},
+                        '10-21H2-E-LTSC': {{ securityEnd: '2027-01-12', esuEnd: null }},
+                        '10-22H2': {{ securityEnd: '2025-10-14', esuEnd: '2028-10-10' }},
+                        
+                        // Windows 11 by version and edition
+                        '11-21H2-Pro': {{ securityEnd: '2023-10-10', esuEnd: null }},
+                        '11-21H2-Enterprise': {{ securityEnd: '2024-10-08', esuEnd: null }},
+                        '11-22H2-Pro': {{ securityEnd: '2024-10-08', esuEnd: null }},
+                        '11-22H2-Enterprise': {{ securityEnd: '2025-10-14', esuEnd: null }},
+                        '11-23H2-Pro': {{ securityEnd: '2025-11-11', esuEnd: null }},
+                        '11-23H2-Enterprise': {{ securityEnd: '2026-11-10', esuEnd: null }},
+                        '11-24H2-Pro': {{ securityEnd: '2026-10-13', esuEnd: null }},
+                        '11-24H2-Enterprise': {{ securityEnd: '2027-10-12', esuEnd: null }},
+                        '11-25H2-Pro': {{ securityEnd: '2027-10-12', esuEnd: null }},
+                        '11-25H2-Enterprise': {{ securityEnd: '2028-10-10', esuEnd: null }},
+                        // 26H1 and later not included (support until 2028+)
+                        
+                        // Ubuntu LTS
+                        'Ubuntu 16.04': {{ securityEnd: '2021-04-02', esuEnd: '2026-04-02' }},
+                        'Ubuntu 18.04': {{ securityEnd: '2023-05-31', esuEnd: '2028-04-01' }},
+                        'Ubuntu 20.04': {{ securityEnd: '2025-05-31', esuEnd: '2030-04-02' }},
+                        'Ubuntu 22.04': {{ securityEnd: '2027-04-01', esuEnd: '2032-04-09' }},
+                        
+                        // Debian
+                        'Debian 9': {{ securityEnd: '2020-07-18', esuEnd: '2022-07-01' }},
+                        'Debian 10': {{ securityEnd: '2022-09-10', esuEnd: '2024-06-30' }},
+                        'Debian 11': {{ securityEnd: '2024-08-14', esuEnd: '2026-08-31' }},
+                        'Debian 12': {{ securityEnd: '2026-06-10', esuEnd: '2028-06-30' }}
+                    }};
+                    
+                    this.computers.forEach(computer => {{
+                        const os = computer['Operating System'] || '';
+                        const enabled = computer.Enabled === 'True' || computer.Enabled === 'TRUE';
+                        
+                        let eolInfo = null;
+                        let osDisplayName = '';
+                        
+                        // Extract build number from format like "10.0 (17763)"
+                        const buildMatch = os.match(/\\((\\d{{5}})\\)/);
+                        const buildNumber = buildMatch ? buildMatch[1] : null;
+                        const version = buildNumber ? buildMapping[buildNumber] : null;
+                        
+                        // Detect OS type and edition
+                        if (/Windows Server 2003/i.test(os)) {{
+                            eolInfo = eolDatabase['Server 2003'];
+                            osDisplayName = 'Windows Server 2003';
+                        }}
+                        else if (/Windows Server 2008 R2/i.test(os)) {{
+                            eolInfo = eolDatabase['Server 2008 R2'];
+                            osDisplayName = 'Windows Server 2008 R2';
+                        }}
+                        else if (/Windows Server 2008(?! R2)/i.test(os)) {{
+                            eolInfo = eolDatabase['Server 2008'];
+                            osDisplayName = 'Windows Server 2008';
+                        }}
+                        else if (/Windows Server 2012 R2/i.test(os)) {{
+                            eolInfo = eolDatabase['Server 2012 R2'];
+                            osDisplayName = 'Windows Server 2012 R2';
+                        }}
+                        else if (/Windows Server 2012(?! R2)/i.test(os)) {{
+                            eolInfo = eolDatabase['Server 2012'];
+                            osDisplayName = 'Windows Server 2012';
+                        }}
+                        else if (/Windows Server 2016/i.test(os)) {{
+                            eolInfo = eolDatabase['Server 2016'];
+                            osDisplayName = 'Windows Server 2016';
+                        }}
+                        // Server 2019, 2022, 2025 not included (support until 2029+)
+                        
+                        else if (/Windows 11/i.test(os) && version) {{
+                            const isEnterprise = /Enterprise/i.test(os);
+                            const edition = isEnterprise ? 'Enterprise' : 'Pro';
+                            const key = `11-${{version}}-${{edition}}`;
+                            eolInfo = eolDatabase[key];
+                            osDisplayName = `Windows 11 ${{version}} (${{edition}})`;
+                        }}
+                        else if (/Windows 10/i.test(os) && version) {{
+                            const isEnterprise = /Enterprise/i.test(os);
+                            const isLTSC = /LTSC/i.test(os);
+                            let key = `10-${{version}}`;
+                            if (isEnterprise && isLTSC) {{
+                                key = `10-${{version}}-E-LTSC`;
+                            }}
+                            eolInfo = eolDatabase[key];
+                            osDisplayName = isLTSC ? `Windows 10 ${{version}} LTSC` : `Windows 10 ${{version}}`;
+                        }}
+                        else if (/Windows XP/i.test(os)) {{
+                            eolInfo = eolDatabase['XP'];
+                            osDisplayName = 'Windows XP';
+                        }}
+                        else if (/Windows Vista/i.test(os)) {{
+                            eolInfo = eolDatabase['Vista'];
+                            osDisplayName = 'Windows Vista';
+                        }}
+                        else if (/Windows 7/i.test(os)) {{
+                            eolInfo = eolDatabase['7'];
+                            osDisplayName = 'Windows 7';
+                        }}
+                        else if (/Windows 8\\.1/i.test(os)) {{
+                            eolInfo = eolDatabase['8.1'];
+                            osDisplayName = 'Windows 8.1';
+                        }}
+                        else if (/Windows 8(?!\\.1)/i.test(os)) {{
+                            eolInfo = eolDatabase['8'];
+                            osDisplayName = 'Windows 8';
+                        }}
+                        else if (/Ubuntu.*16\\.04/i.test(os)) {{
+                            eolInfo = eolDatabase['Ubuntu 16.04'];
+                            osDisplayName = 'Ubuntu 16.04 LTS';
+                        }}
+                        else if (/Ubuntu.*18\\.04/i.test(os)) {{
+                            eolInfo = eolDatabase['Ubuntu 18.04'];
+                            osDisplayName = 'Ubuntu 18.04 LTS';
+                        }}
+                        else if (/Ubuntu.*20\\.04/i.test(os)) {{
+                            eolInfo = eolDatabase['Ubuntu 20.04'];
+                            osDisplayName = 'Ubuntu 20.04 LTS';
+                        }}
+                        else if (/Ubuntu.*22\\.04/i.test(os)) {{
+                            eolInfo = eolDatabase['Ubuntu 22.04'];
+                            osDisplayName = 'Ubuntu 22.04 LTS';
+                        }}
+                        else if (/Debian.*9/i.test(os)) {{
+                            eolInfo = eolDatabase['Debian 9'];
+                            osDisplayName = 'Debian 9 (Stretch)';
+                        }}
+                        else if (/Debian.*10/i.test(os)) {{
+                            eolInfo = eolDatabase['Debian 10'];
+                            osDisplayName = 'Debian 10 (Buster)';
+                        }}
+                        else if (/Debian.*11/i.test(os)) {{
+                            eolInfo = eolDatabase['Debian 11'];
+                            osDisplayName = 'Debian 11 (Bullseye)';
+                        }}
+                        else if (/Debian.*12/i.test(os)) {{
+                            eolInfo = eolDatabase['Debian 12'];
+                            osDisplayName = 'Debian 12 (Bookworm)';
+                        }}
+                        
+                        // If we found EOL info, check if it should be flagged
+                        if (eolInfo) {{
+                            const securityEndDate = new Date(eolInfo.securityEnd);
+                            const esuEndDate = eolInfo.esuEnd ? new Date(eolInfo.esuEnd) : null;
+                            
+                            let shouldFlag = false;
+                            let riskLevel = 'LOW';
+                            let eolStatus = '';
+                            let relevantEndDate = securityEndDate;
+                            
+                            // CRITICAL: Security support ended
+                            if (now > securityEndDate) {{
+                                shouldFlag = true;
+                                riskLevel = 'CRITICAL';
+                                eolStatus = 'End-of-Life';
+                                relevantEndDate = securityEndDate;
+                            }}
+                            // INFO: Security support ends within 12 months
+                            else if (securityEndDate <= twelveMonthsFromNow) {{
+                                shouldFlag = true;
+                                riskLevel = 'INFO';
+                                eolStatus = 'SOON EOL';
+                                relevantEndDate = securityEndDate;
+                            }}
+                            
+                            // Adjust risk for disabled systems (reduce by one level)
+                            if (!enabled && shouldFlag) {{
+                                if (riskLevel === 'CRITICAL') riskLevel = 'HIGH';
+                                else if (riskLevel === 'INFO') riskLevel = 'LOW';
+                            }}
+                            
+                            // Only add to list if we should flag it
+                            if (shouldFlag) {{
+                                // Calculate days until/since EOL
+                                const daysDiff = Math.floor((now - relevantEndDate) / (1000 * 60 * 60 * 24));
+                                
+                                // For SOON EOL (negative days means future EOL), show countdown
+                                let daysDisplay;
+                                if (daysDiff > 0) {{
+                                    // Already EOL - show positive days
+                                    daysDisplay = daysDiff;
+                                }} else {{
+                                    // SOON EOL - show negative days (countdown)
+                                    daysDisplay = daysDiff; // This will be negative
+                                }}
+                                
+                                // Format EOL date
+                                const eolDateStr = relevantEndDate.toISOString().split('T')[0];
+                                
+                                legacySystems.push({{
+                                    Name: computer.Name || computer.UserName,
+                                    'DNS Hostname': computer.DNSHostName || computer['DNS Hostname'] || '',
+                                    'Operating System': os,
+                                    'OS Version': osDisplayName,
+                                    'IPv4Address': computer.IPv4Address || computer['IPv4 Address'] || '',
+                                    Enabled: enabled ? 'Yes' : 'No',
+                                    'EOL Date': eolDateStr,
+                                    'Days Since EOL': daysDisplay,
+                                    'EOL Status': eolStatus,
+                                    'Logon Age (days)': computer['Logon Age (days)'] || '',
+                                    'Risk Level': riskLevel,
+                                    DN: computer['Distinguished Name'] || computer.DistinguishedName || ''
+                                }});
+                            }}
+                        }}
+                    }});
+                    
+                    // Apply sorting
+                    if (this.legacyOsSortColumn) {{
+                        const direction = this.legacyOsSortDirection === 'asc' ? 1 : -1;
+                        const column = this.legacyOsSortColumn;
+                        
+                        legacySystems = [...legacySystems].sort((a, b) => {{
+                            if (column === 'Risk Level') {{
+                                const riskPriority = {{ 'CRITICAL': 0, 'HIGH': 1, 'MEDIUM': 2, 'INFO': 3, 'LOW': 4 }};
+                                const aPriority = riskPriority[a[column]] ?? 999;
+                                const bPriority = riskPriority[b[column]] ?? 999;
+                                if (aPriority !== bPriority) {{
+                                    return (aPriority - bPriority) * direction;
+                                }}
+                                // If risk levels are equal, sort by days since EOL as tiebreaker
+                                const aDays = parseInt(a['Days Since EOL']) || 0;
+                                const bDays = parseInt(b['Days Since EOL']) || 0;
+                                if (aDays !== bDays) {{
+                                    return (bDays - aDays) * direction;
+                                }}
+                                // Final tiebreaker: sort by computer name
+                                const aName = (a['Name'] || '').toString().toLowerCase();
+                                const bName = (b['Name'] || '').toString().toLowerCase();
+                                if (aName < bName) return -1 * direction;
+                                if (aName > bName) return 1 * direction;
+                                return 0;
+                            }}
+                            
+                            if (column === 'EOL Status') {{
+                                // Priority sort: End-of-Life (CRITICAL) > SOON EOL (INFO)
+                                const statusPriority = {{ 'End-of-Life': 0, 'SOON EOL': 1 }};
+                                const aPriority = statusPriority[a[column]] ?? 999;
+                                const bPriority = statusPriority[b[column]] ?? 999;
+                                if (aPriority !== bPriority) {{
+                                    return (aPriority - bPriority) * direction;
+                                }}
+                                // If status is equal, sort by days since EOL as tiebreaker
+                                const aDays = parseInt(a['Days Since EOL']) || 0;
+                                const bDays = parseInt(b['Days Since EOL']) || 0;
+                                if (aDays !== bDays) {{
+                                    return (bDays - aDays) * direction;
+                                }}
+                                // Final tiebreaker: sort by computer name
+                                const aName = (a['Name'] || '').toString().toLowerCase();
+                                const bName = (b['Name'] || '').toString().toLowerCase();
+                                if (aName < bName) return -1 * direction;
+                                if (aName > bName) return 1 * direction;
+                                return 0;
+                            }}
+                            
+                            if (column === 'Days Since EOL') {{
+                                const aValue = parseInt(a[column]) || 0;
+                                const bValue = parseInt(b[column]) || 0;
+                                
+                                // Sorting logic for mixed positive (past EOL) and negative (SOON EOL) values:
+                                // Ascending: Most critical first (past EOL with highest days > SOON EOL with lowest days until)
+                                //   - Past EOL (positive): Higher values more critical (e.g., 365 > 30 since EOL)
+                                //   - SOON EOL (negative): Less negative more critical (e.g., -30 > -365 until EOL)
+                                // Descending: Least critical first (reverse of above)
+                                
+                                // For ascending (direction = 1), we want: bValue - aValue (descending numeric order)
+                                // Examples with ascending:
+                                //   365 vs 30: 30 - 365 = -335 (365 comes first) ✓
+                                //   -30 vs -365: -365 - (-30) = -335 (-30 comes first) ✓  
+                                //   365 vs -30: -30 - 365 = -395 (365 comes first) ✓
+                                if (aValue !== bValue) {{
+                                    return (bValue - aValue) * direction;
+                                }}
+                                // Tiebreaker: sort by computer name
+                                const aName = (a['Name'] || '').toString().toLowerCase();
+                                const bName = (b['Name'] || '').toString().toLowerCase();
+                                if (aName < bName) return -1 * direction;
+                                if (aName > bName) return 1 * direction;
+                                return 0;
+                            }}
+                            
+                            if (column === 'Logon Age (days)') {{
+                                // Handle empty, null, undefined, and parse numeric values
+                                let aValue = 999999; // Default for "never logged in"
+                                let bValue = 999999;
+                                
+                                if (a[column] && a[column] !== '') {{
+                                    const parsed = parseInt(a[column]);
+                                    if (!isNaN(parsed)) {{
+                                        aValue = parsed;
+                                    }}
+                                }}
+                                
+                                if (b[column] && b[column] !== '') {{
+                                    const parsed = parseInt(b[column]);
+                                    if (!isNaN(parsed)) {{
+                                        bValue = parsed;
+                                    }}
+                                }}
+                                
+                                if (aValue !== bValue) {{
+                                    return (aValue - bValue) * direction;
+                                }}
+                                // Tiebreaker: sort by computer name
+                                const aName = (a['Name'] || '').toString().toLowerCase();
+                                const bName = (b['Name'] || '').toString().toLowerCase();
+                                if (aName < bName) return -1 * direction;
+                                if (aName > bName) return 1 * direction;
+                                return 0;
+                            }}
+                            
+                            if (column === 'EOL Date') {{
+                                // Sort dates properly
+                                const aValue = a[column] || '';
+                                const bValue = b[column] || '';
+                                if (aValue !== bValue) {{
+                                    if (aValue < bValue) return -1 * direction;
+                                    if (aValue > bValue) return 1 * direction;
+                                }}
+                                // Tiebreaker: sort by computer name
+                                const aName = (a['Name'] || '').toString().toLowerCase();
+                                const bName = (b['Name'] || '').toString().toLowerCase();
+                                if (aName < bName) return -1 * direction;
+                                if (aName > bName) return 1 * direction;
+                                return 0;
+                            }}
+                            
+                            const aValue = (a[column] || '').toString().toLowerCase();
+                            const bValue = (b[column] || '').toString().toLowerCase();
+                            
+                            if (aValue !== bValue) {{
+                                if (aValue < bValue) return -1 * direction;
+                                if (aValue > bValue) return 1 * direction;
+                            }}
+                            // Tiebreaker: sort by computer name (unless already sorting by Name)
+                            if (column !== 'Name') {{
+                                const aName = (a['Name'] || '').toString().toLowerCase();
+                                const bName = (b['Name'] || '').toString().toLowerCase();
+                                if (aName < bName) return -1 * direction;
+                                if (aName > bName) return 1 * direction;
+                            }}
+                            return 0;
+                        }});
+                    }}
+                    
+                    // Filter out disabled systems
+                    return legacySystems.filter(s => s.Enabled === 'Yes');
+                }},
+                
+                paginatedLegacyOS() {{
+                    const start = (this.legacyOsPage - 1) * this.itemsPerPage;
+                    const end = start + this.itemsPerPage;
+                    return this.legacyOperatingSystems.slice(start, end);
+                }},
+                
+                paginatedUnconstrainedDelegation() {{
+                    const start = (this.unconstrainedDelegationPage - 1) * this.itemsPerPage;
+                    const end = start + this.itemsPerPage;
+                    return this.unconstrainedDelegationAccounts.slice(start, end);
+                }},
+                
+                paginatedConstrainedDelegation() {{
+                    const start = (this.constrainedDelegationPage - 1) * this.itemsPerPage;
+                    const end = start + this.itemsPerPage;
+                    return this.constrainedDelegationRisks.slice(start, end);
+                }},
+                
+                paginatedSIDHistory() {{
+                    const start = (this.sidHistoryPage - 1) * this.itemsPerPage;
+                    const end = start + this.itemsPerPage;
+                    return this.objectsWithSIDHistory.slice(start, end);
+                }},
+                
+                paginatedForeignPrincipals() {{
+                    const start = (this.foreignPrincipalsPage - 1) * this.itemsPerPage;
+                    const end = start + this.itemsPerPage;
+                    return this.foreignSecurityPrincipals.slice(start, end);
+                }},
+                
+                paginatedGMSAVuln() {{
+                    const start = (this.gmsaVulnPage - 1) * this.itemsPerPage;
+                    const end = start + this.itemsPerPage;
+                    return this.vulnerableGMSA.slice(start, end);
                 }},
                 
                 criticalFindings() {{
@@ -4261,6 +4927,15 @@ class DashboardGenerator:
                     }} else {{
                         this.gmsaVulnSortColumn = column;
                         this.gmsaVulnSortDirection = 'asc';
+                    }}
+                }},
+                
+                sortLegacyOS(column) {{
+                    if (this.legacyOsSortColumn === column) {{
+                        this.legacyOsSortDirection = this.legacyOsSortDirection === 'asc' ? 'desc' : 'asc';
+                    }} else {{
+                        this.legacyOsSortColumn = column;
+                        this.legacyOsSortDirection = 'asc';
                     }}
                 }},
                 
