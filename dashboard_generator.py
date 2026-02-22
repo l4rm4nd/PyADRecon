@@ -147,6 +147,11 @@ class DashboardGenerator:
             color: #78350f;
         }}
         
+        .badge-info {{
+            background-color: #3b82f6;
+            color: white;
+        }}
+        
         .badge-none {{
             background-color: #6b7280;
             color: white;
@@ -356,7 +361,7 @@ class DashboardGenerator:
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex space-x-8">
                     <button v-for="tab in tabs" :key="tab.id"
-                            @click="activeTab = tab.id"
+                            @click="handleTabClick(tab.id)"
                             :class="[
                                 'py-4 px-1 border-b-2 font-medium text-sm transition',
                                 activeTab === tab.id 
@@ -504,14 +509,14 @@ class DashboardGenerator:
                         </div>
                     </div>
                     
-                    <div v-if="unprotectedPrivilegedUsers.length > 0" @click="navigateToSection('findings', 'protected-users-section')" class="stat-card bg-white dark:bg-gray-800 rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow">
+                    <div v-if="protectedGroups.length > 0" @click="navigateToSection('findings', 'protected-users-section')" class="stat-card bg-white dark:bg-gray-800 rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-teal-100 dark:bg-teal-900/30 rounded-md p-3">
                                 <i class="fas fa-shield-alt text-teal-600 text-2xl"></i>
                             </div>
                             <div class="ml-5 w-0 flex-1">
                                 <dl>
-                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Privileged Users</dt>
+                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Privileged User Accounts</dt>
                                     <dd class="text-3xl font-semibold text-gray-900 dark:text-white">{{{{ unprotectedPrivilegedUsers.length }}}}</dd>
                                     <dd class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                         Not in Protected Users
@@ -531,7 +536,7 @@ class DashboardGenerator:
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Machine Account Quota</dt>
                                     <dd class="text-3xl font-semibold text-gray-900 dark:text-white">{{{{ machineAccountQuota }}}}</dd>
                                     <dd class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                        computers can be added
+                                        Computers can be added
                                     </dd>
                                 </dl>
                             </div>
@@ -1315,55 +1320,173 @@ class DashboardGenerator:
                     </div>
                 </div>
 
-                <!-- Unprotected Privileged Users -->
-                <div id="protected-users-section" v-if="unprotectedPrivilegedUsers.length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <!-- Protected Groups & AdminSDHolder -->
+                <div id="protected-users-section" v-if="protectedGroups.length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                     <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                        <i class="fas fa-shield-alt text-teal-600"></i> Unprotected Privileged Users ({{{{ unprotectedPrivilegedUsers.length }}}})
+                        <i class="fas fa-shield-alt text-teal-600"></i> Tier-0 User Accounts - Protected Users Audit ({{{{ unprotectedPrivilegedUsers.length }}}})
                     </h2>
+                    
                     <div class="bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-500 p-4 mb-6">
                         <h3 class="font-semibold text-teal-800 dark:text-teal-200 mb-2">🎯 Issue & Impact</h3>
                         <p class="text-teal-700 dark:text-teal-300 text-sm mb-3">
-                            Privileged accounts (Domain Admins, Enterprise Admins, Administrators) not in the Protected Users security group lack critical protections against credential theft attacks. This group enforces non-delegable credentials, NTLMv2-only authentication, Kerberos AES encryption, and restrictions on credential caching.
+                            <strong>IMPORTANT:</strong> Being a member of privileged groups like "Domain Admins" (adminCount=1 protected by AdminSDHolder) does NOT automatically provide "Protected Users" group protections. Tier-0 accounts should have BOTH protections. These are two different security mechanisms:
                         </p>
+                        <ul class="list-disc list-inside text-teal-700 dark:text-teal-300 text-sm mb-3 ml-4 space-y-2">
+                            <li><strong>AdminSDHolder Protection (adminCount=1):</strong> Prevents unauthorized ACL modifications on privileged accounts and groups. Runs hourly to reset permissions. Provides baseline security for privileged objects.</li>
+                            <li><strong>Protected Users Group (CN=Protected Users):</strong> Adds critical authentication hardening on top of AdminSDHolder: blocks NTLM authentication (Kerberos-only with AES), prevents credential delegation, disables credential caching in LSASS, limits TGT lifetime to 4 hours.</li>
+                        </ul>
                         <h3 class="font-semibold text-teal-800 dark:text-teal-200 mb-2">⚔️ Attacker Benefit</h3>
                         <p class="text-teal-700 dark:text-teal-300 text-sm mb-3">
-                            Without Protected Users protections, privileged accounts are vulnerable to Pass-the-Hash, Pass-the-Ticket, credential delegation abuse, and offline attacks on weak/legacy encryption. Compromising these accounts grants domain-wide control.
+                            Accounts with AdminSDHolder protection but without Protected Users hardening remain vulnerable to credential theft: Pass-the-Hash (NTLM credential reuse), Pass-the-Ticket (Kerberos ticket theft), unconstrained/constrained delegation abuse, RC4 downgrade attacks, and credential dumping from LSASS memory. While AdminSDHolder prevents ACL tampering, it doesn't stop authentication-level attacks.
                         </p>
                         <h3 class="font-semibold text-teal-800 dark:text-teal-200 mb-2">🔓 Exploitation Method</h3>
                         <p class="text-teal-700 dark:text-teal-300 text-sm mb-3">
-                            Tools: Mimikatz (sekurlsa::logonpasswords, sekurlsa::tickets), Rubeus, Impacket. Extract credentials from LSASS memory, perform Pass-the-Hash/Pass-the-Ticket attacks. Unconstrained/constrained delegation allows ticket theft. RC4 encryption susceptible to offline cracking.
+                            Tools: Mimikatz (sekurlsa::logonpasswords, sekurlsa::tickets), Rubeus, Impacket (secretsdump.py, getTGT.py). Extract NTLM hashes/Kerberos tickets from LSASS memory or domain controller. Perform lateral movement using Pass-the-Hash, overpass-the-hash, or delegation attacks. RC4 encryption susceptible to offline cracking and downgrade attacks.
                         </p>
                         <h3 class="font-semibold text-teal-800 dark:text-teal-200 mb-2">💡 Remediation</h3>
                         <p class="text-teal-700 dark:text-teal-300 text-sm">
-                            <strong>Add privileged accounts to Protected Users group:</strong> For Windows Server 2012 R2+ domains, add Domain Admins, Enterprise Admins, and other Tier 0 accounts to the "Protected Users" group. This enforces: no NTLM authentication (Kerberos only), no DES/RC4 encryption, no credential delegation, no password caching. Test compatibility before deployment as some legacy applications may break.
+                            <strong>PowerShell:</strong> <code class="bg-teal-100 dark:bg-teal-800 px-2 py-1 rounded">Add-ADGroupMember -Identity "Protected Users" -Members "username"</code><br>
+                            For Windows Server 2012 R2+ domains, add all Tier-0 accounts (Domain Admins, Enterprise Admins, Schema Admins) to the "Protected Users" group for defense-in-depth. <strong>Important:</strong> Do NOT add service accounts or the built-in Administrator (RID 500) if you need NTLM/RC4 for emergency DSRM access. Test compatibility before deployment as legacy applications requiring NTLM/RC4/delegation may break.
                         </p>
                     </div>
-                    <div class="table-container">
+                    
+                    <!-- User Accounts Table -->
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                        <i class="fas fa-user-shield text-blue-600"></i> Privileged User Accounts (Priority Review)
+                    </h3>
+                    <div class="table-container overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead>
+                            <thead class="bg-gray-100 dark:bg-gray-700">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">SAM Account Name</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Name</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Last Logon</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Risk Level</th>
+                                    <th @click="sortProtectedGroups('SAM Account Name')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600">
+                                        SAM Account
+                                        <i v-if="protectedGroupsSortColumn === 'SAM Account Name'" :class="protectedGroupsSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                        <i v-else class="fas fa-sort ml-1 opacity-30"></i>
+                                    </th>
+                                    <th @click="sortProtectedGroups('AdminSDHolder Protected Group Membership')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600">
+                                        Tier-0 Membership
+                                        <i v-if="protectedGroupsSortColumn === 'AdminSDHolder Protected Group Membership'" :class="protectedGroupsSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                        <i v-else class="fas fa-sort ml-1 opacity-30"></i>
+                                    </th>
+                                    <th @click="sortProtectedGroups('In Protected Users Group')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600">
+                                        Protected Users?
+                                        <i v-if="protectedGroupsSortColumn === 'In Protected Users Group'" :class="protectedGroupsSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                        <i v-else class="fas fa-sort ml-1 opacity-30"></i>
+                                    </th>
+                                    <th @click="sortProtectedGroups('Last Logon')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600">
+                                        Last Logon
+                                        <i v-if="protectedGroupsSortColumn === 'Last Logon'" :class="protectedGroupsSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                        <i v-else class="fas fa-sort ml-1 opacity-30"></i>
+                                    </th>
+                                    <th @click="sortProtectedGroups('Risk Level')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600">
+                                        Risk Level
+                                        <i v-if="protectedGroupsSortColumn === 'Risk Level'" :class="protectedGroupsSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                        <i v-else class="fas fa-sort ml-1 opacity-30"></i>
+                                    </th>
+                                    <th @click="sortProtectedGroups('Recommendations')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600">
+                                        Recommendations
+                                        <i v-if="protectedGroupsSortColumn === 'Recommendations'" :class="protectedGroupsSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                        <i v-else class="fas fa-sort ml-1 opacity-30"></i>
+                                    </th>
+                                    <th @click="sortProtectedGroups('Security Analysis')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600">
+                                        Security Analysis
+                                        <i v-if="protectedGroupsSortColumn === 'Security Analysis'" :class="protectedGroupsSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                        <i v-else class="fas fa-sort ml-1 opacity-30"></i>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                <tr v-for="user in unprotectedPrivilegedUsers" :key="user['SAM Account Name']">
-                                    <td class="px-6 py-4 whitespace-nowrap font-medium">{{{{ user['SAM Account Name'] }}}}</td>
-                                    <td class="px-6 py-4">{{{{ user.Name || 'N/A' }}}}</td>
-                                    <td class="px-6 py-4 text-sm">{{{{ user.Status || 'N/A' }}}}</td>
-                                    <td class="px-6 py-4 text-sm">{{{{ user['Last Logon'] || 'Never' }}}}</td>
-                                    <td class="px-6 py-4">
+                                <tr v-for="user in paginatedProtectedUsers" :key="user['SAM Account Name']" class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                    <td class="px-4 py-4 whitespace-nowrap font-mono text-sm font-medium">{{{{ user['SAM Account Name'] }}}}</td>
+                                    <td class="px-4 py-4 text-sm max-w-xs">
+                                        <div class="space-y-1">
+                                            <template v-for="group in (user['AdminSDHolder Protected Group Membership'] || 'None').split(';')" :key="group">
+                                                <span v-if="group.trim() !== 'None'" class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 mr-1 mb-1">
+                                                    {{{{ group.trim() }}}}
+                                                </span>
+                                                <span v-else class="text-gray-500 dark:text-gray-400 text-xs">None</span>
+                                            </template>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-center">
+                                        <span v-if="user['In Protected Users Group'] === 'Yes' || user['In Protected Users Group'] === 'YES'" 
+                                              class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
+                                            ✓ YES
+                                        </span>
+                                        <span v-else class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200">
+                                            ✗ NO
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm">{{{{ user['Last Logon'] || 'N/A' }}}}</td>
+                                    <td class="px-4 py-4 whitespace-nowrap">
                                         <span v-if="user['Risk Level'] === 'CRITICAL' || user['Risk Level'] === 'Critical'" class="badge badge-critical">CRITICAL</span>
                                         <span v-else-if="user['Risk Level'] === 'HIGH' || user['Risk Level'] === 'High'" class="badge badge-high">HIGH</span>
                                         <span v-else-if="user['Risk Level'] === 'MEDIUM' || user['Risk Level'] === 'Medium'" class="badge badge-medium">MEDIUM</span>
-                                        <span v-else class="badge badge-low">{{{{ user['Risk Level'] || 'LOW' }}}}</span>
+                                        <span v-else-if="user['Risk Level'] === 'INFO' || user['Risk Level'] === 'Info'" class="badge badge-info">INFO</span>
+                                        <span v-else-if="user['Risk Level'] === 'LOW' || user['Risk Level'] === 'Low'" class="badge badge-low">LOW</span>
+                                        <span v-else class="badge badge-low">{{{{ user['Risk Level'] }}}}</span>
+                                    </td>
+                                    <td class="px-4 py-4 text-sm max-w-md">
+                                        <div class="text-gray-900 dark:text-gray-100 leading-relaxed">
+                                            {{{{ user.Recommendations || 'N/A' }}}}
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-4 text-sm max-w-md">
+                                        <div class="text-gray-600 dark:text-gray-400 leading-relaxed italic">
+                                            {{{{ user['Security Analysis'] || 'N/A' }}}}
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr v-if="paginatedProtectedUsers.length === 0">
+                                    <td colspan="7" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                                        No privileged user accounts found
                                     </td>
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                    
+                    <!-- Pagination Controls -->
+                    <div v-if="protectedGroupsTotalPages > 1" class="flex items-center justify-between bg-gray-50 dark:bg-gray-700 px-4 py-3 mt-4 rounded-lg">
+                        <div class="flex-1 flex justify-between items-center sm:hidden">
+                            <button @click="protectedGroupsPrevPage()" :disabled="protectedGroupsCurrentPage === 1" class="pagination-btn">Previous</button>
+                            <span class="text-sm text-gray-700 dark:text-gray-300">Page {{{{ protectedGroupsCurrentPage }}}} of {{{{ protectedGroupsTotalPages }}}}</span>
+                            <button @click="protectedGroupsNextPage()" :disabled="protectedGroupsCurrentPage === protectedGroupsTotalPages" class="pagination-btn">Next</button>
+                        </div>
+                        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                            <div>
+                                <p class="text-sm text-gray-700 dark:text-gray-300">
+                                    Showing <span class="font-medium">{{{{ (protectedGroupsCurrentPage - 1) * protectedGroupsPerPage + 1 }}}}</span> to <span class="font-medium">{{{{ Math.min(protectedGroupsCurrentPage * protectedGroupsPerPage, unprotectedPrivilegedUsers.length) }}}}</span> of <span class="font-medium">{{{{ unprotectedPrivilegedUsers.length }}}}</span> user accounts
+                                </p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button @click="protectedGroupsPrevPage()" :disabled="protectedGroupsCurrentPage === 1" class="pagination-btn">
+                                    <i class="fas fa-chevron-left"></i> Previous
+                                </button>
+                                <span class="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
+                                    Page {{{{ protectedGroupsCurrentPage }}}} of {{{{ protectedGroupsTotalPages }}}}
+                                </span>
+                                <button @click="protectedGroupsNextPage()" :disabled="protectedGroupsCurrentPage === protectedGroupsTotalPages" class="pagination-btn">
+                                    Next <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Protected Groups Summary -->
+                    <div v-if="protectedGroupObjects.length > 0" class="mt-6 bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                            <i class="fas fa-users-cog text-gray-600"></i> Default Tier-0 Groups ({{{{ protectedGroupObjects.length }}}})
+                        </h3>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                            These are built-in AdminSDHolder protected groups. Ensure all members of these groups are added to the Protected Users group.
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            <span v-for="group in protectedGroupObjects" :key="group['SAM Account Name']" 
+                                  class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200">
+                                <i class="fas fa-users mr-1"></i> {{{{ group['SAM Account Name'] }}}}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
@@ -1888,6 +2011,11 @@ class DashboardGenerator:
                     userSortDirection: 'asc',
                     computerSortColumn: null,
                     computerSortDirection: 'asc',
+                    protectedGroupsSortColumn: null,
+                    protectedGroupsSortDirection: 'asc',
+                    protectedGroupsCurrentPage: 1,
+                    protectedGroupsPerPage: 50,
+                    showProtectedGroupsType: 'users', // 'users', 'groups', 'all'
                     tabs: [
                         {{ id: 'overview', label: 'Overview', icon: 'fas fa-home', count: null }},
                         {{ id: 'findings', label: 'Security Findings', icon: 'fas fa-bug', count: null }},
@@ -2150,14 +2278,66 @@ class DashboardGenerator:
                 }},
                 
                 unprotectedPrivilegedUsers() {{
-                    return this.protectedGroups.filter(u => {{
-                        // Users not in Protected Users group with Risk Level > Low
-                        const notInProtectedUsers = u['In Protected Users Group'] === 'No' || u['In Protected Users Group'] === 'NO';
-                        const isUser = u.Type === 'User' || u.Type === 'USER';
-                        const riskLevel = (u['Risk Level'] || '').toUpperCase();
-                        const highRisk = riskLevel === 'MEDIUM' || riskLevel === 'HIGH' || riskLevel === 'CRITICAL';
-                        return isUser && notInProtectedUsers && highRisk;
-                    }});
+                    // Returns ONLY USER objects (not groups) - prioritize actual accounts to protect
+                    let userObjects = this.protectedGroups.filter(obj => obj.Type === 'User');
+                    
+                    // Sort user objects
+                    if (this.protectedGroupsSortColumn) {{
+                        const direction = this.protectedGroupsSortDirection === 'asc' ? 1 : -1;
+                        const column = this.protectedGroupsSortColumn;
+                        
+                        userObjects.sort((a, b) => {{
+                            // Special handling for Risk Level
+                            if (column === 'Risk Level') {{
+                                const riskPriority = {{
+                                    'CRITICAL': 0,
+                                    'HIGH': 1,
+                                    'MEDIUM': 2,
+                                    'Medium': 2,
+                                    'LOW': 3,
+                                    'Low': 3,
+                                    'INFO': 4,
+                                    'Info': 4
+                                }};
+                                const aPriority = riskPriority[a[column]] !== undefined ? riskPriority[a[column]] : 999;
+                                const bPriority = riskPriority[b[column]] !== undefined ? riskPriority[b[column]] : 999;
+                                return (aPriority - bPriority) * direction;
+                            }}
+                            
+                            // Special handling for In Protected Users Group (Yes/No)
+                            if (column === 'In Protected Users Group') {{
+                                const aVal = (a[column] || 'No').toUpperCase() === 'YES' ? 0 : 1;
+                                const bVal = (b[column] || 'No').toUpperCase() === 'YES' ? 0 : 1;
+                                return (aVal - bVal) * direction;
+                            }}
+                            
+                            // Normal string/text comparison
+                            const aValue = (a[column] || '').toString().toLowerCase();
+                            const bValue = (b[column] || '').toString().toLowerCase();
+                            
+                            if (aValue < bValue) return -1 * direction;
+                            if (aValue > bValue) return 1 * direction;
+                            return 0;
+                        }});
+                    }}
+                    
+                    return userObjects;
+                }},
+                
+                protectedGroupObjects() {{
+                    // Returns ONLY GROUP objects - these are default Tier-0 groups
+                    return this.protectedGroups.filter(obj => obj.Type === 'Group');
+                }},
+                
+                paginatedProtectedUsers() {{
+                    // Paginate user objects for performance
+                    const start = (this.protectedGroupsCurrentPage - 1) * this.protectedGroupsPerPage;
+                    const end = start + this.protectedGroupsPerPage;
+                    return this.unprotectedPrivilegedUsers.slice(start, end);
+                }},
+                
+                protectedGroupsTotalPages() {{
+                    return Math.ceil(this.unprotectedPrivilegedUsers.length / this.protectedGroupsPerPage);
                 }},
                 
                 machineAccountQuota() {{
@@ -2230,7 +2410,7 @@ class DashboardGenerator:
                     if (this.lapsReadable.length > 0) count++; // LAPS Readable
                     if (this.passwordPolicy.length > 0) count++; // Password Policy
                     if (this.krbtgtOldPassword.length > 0) count++; // KRBTGT password rotation
-                    if (this.unprotectedPrivilegedUsers.length > 0) count++; // Protected Users group
+                    if (this.protectedGroups.length > 0) count++; // Protected Groups & AdminSDHolder
                     if (this.machineAccountQuota > 0) count++; // Machine Account Quota
                     return count;
                 }},
@@ -2608,6 +2788,14 @@ class DashboardGenerator:
                         }}
                     }});
                 }},
+                handleTabClick(tabId) {{
+                    // If clicking on overview tab, scroll to security findings
+                    if (tabId === 'overview') {{
+                        this.scrollToSecurityFindings();
+                    }} else {{
+                        this.activeTab = tabId;
+                    }}
+                }},
                 navigateToSection(tab, sectionId) {{
                     this.activeTab = tab;
                     this.$nextTick(() => {{
@@ -2787,6 +2975,34 @@ class DashboardGenerator:
                         this.lapsSortDirection = 'asc';
                     }}
                     this.lapsPage = 1;
+                }},
+                
+                sortProtectedGroups(column) {{
+                    if (this.protectedGroupsSortColumn === column) {{
+                        this.protectedGroupsSortDirection = this.protectedGroupsSortDirection === 'asc' ? 'desc' : 'asc';
+                    }} else {{
+                        this.protectedGroupsSortColumn = column;
+                        this.protectedGroupsSortDirection = 'asc';
+                    }}
+                    this.protectedGroupsCurrentPage = 1; // Reset to first page when sorting
+                }},
+                
+                protectedGroupsNextPage() {{
+                    if (this.protectedGroupsCurrentPage < this.protectedGroupsTotalPages) {{
+                        this.protectedGroupsCurrentPage++;
+                    }}
+                }},
+                
+                protectedGroupsPrevPage() {{
+                    if (this.protectedGroupsCurrentPage > 1) {{
+                        this.protectedGroupsCurrentPage--;
+                    }}
+                }},
+                
+                protectedGroupsGoToPage(page) {{
+                    if (page >= 1 && page <= this.protectedGroupsTotalPages) {{
+                        this.protectedGroupsCurrentPage = page;
+                    }}
                 }},
                 
                 initCharts() {{
