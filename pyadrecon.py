@@ -4722,47 +4722,68 @@ class PyADRecon:
                     # Group that is not a protected group but has adminCount=1
                     status = "Non-Standard Group with AdminCount=1"
                 
-                # Check if highly privileged but NOT in Protected Users group (security risk)
+                # Security Analysis: SECURITY-FIRST APPROACH
+                # Focus: Tier-0 privileged users are high-value targets and MUST be in Protected Users group
+                # AdminSDHolder (adminCount=1) only protects ACLs, NOT credentials
                 risk_level = "Low"
                 recommendations = []
+                security_notes = []
                 
                 if is_protected_group_object:
                     # Built-in protected groups are normal, no risk
-                    risk_level = "Low"
-                    recommendations.append("Built-in AD object (normal)")
+                    risk_level = "Info"
+                    recommendations.append("Built-in AdminSDHolder protected group - Review members for Protected Users group inclusion")
+                    security_notes.append("This is a GROUP object, not a user account")
                 elif is_service_account_exclusion:
                     # Service accounts like krbtgt that can't be in Protected Users
-                    risk_level = "Low"
-                    recommendations.append("Service account - Protected Users group not applicable")
+                    risk_level = "Info"
+                    recommendations.append("Service account - Cannot be in 'Protected Users' group (incompatible)")
+                    security_notes.append("Service accounts need NTLM/RC4 which Protected Users blocks")
                 elif is_builtin_administrator:
                     # Built-in Administrator account (RID 500) - special case for emergency access
                     if not in_protected_users_group:
                         risk_level = "Medium"
-                        recommendations.append("Built-in Administrator account - Consider Protected Users group only if emergency access doesn't require NTLM/RC4")
+                        recommendations.append("ADD to 'Protected Users' group ONLY if emergency access doesn't require NTLM/RC4/delegation")
+                        security_notes.append("Built-in Admin (RID 500) - Consider Protected Users for hardening, but ensure emergency DSRM access is maintained")
                     else:
                         risk_level = "Low"
-                        recommendations.append("Built-in Administrator account properly protected")
+                        recommendations.append("Properly secured in 'Protected Users' group")
+                        security_notes.append("Enhanced authentication security enabled (no NTLM/RC4/delegation)")
                 elif is_builtin_account:
                     # Other built-in accounts that aren't Administrator or service accounts
                     if not in_protected_users_group:
                         risk_level = "Medium"
-                        recommendations.append("Built-in account - Consider Protected Users group")
+                        recommendations.append("ADD to 'Protected Users' group for enhanced security")
+                        security_notes.append("Built-in account lacks Protected Users hardening")
                     else:
                         risk_level = "Low"
-                        recommendations.append("Built-in account properly protected")
+                        recommendations.append("Properly secured in 'Protected Users' group")
+                        security_notes.append("Enhanced authentication security enabled")
                 elif is_user and (in_highly_privileged_group or in_protected_group):
-                    # User is in privileged groups
+                    # SECURITY CRITICAL: Tier-0 privileged users are prime targets for attackers
                     if not in_protected_users_group:
                         risk_level = "HIGH"
-                        recommendations.append("Highly privileged user should be in 'Protected Users' group for additional security")
+                        recommendations.append("CRITICAL: ADD to 'Protected Users' group immediately - Blocks Pass-the-Hash, NTLM relay, delegation attacks")
+                        security_notes.append(f"HIGH-VALUE TARGET: Tier-0 privileged user WITHOUT Protected Users hardening - Vulnerable to credential theft (Pass-the-Hash, NTLM relay, Kerberos delegation, RC4 downgrade)")
+                    else:
+                        risk_level = "Low" 
+                        recommendations.append("GOOD: Tier-0 account properly secured in 'Protected Users' group")
+                        security_notes.append("Optimal security: Protected Users hardening active (NTLM blocked, only AES Kerberos, no delegation, 4hr TGT)")
                 elif is_user and not in_protected_group:
-                    # User has adminCount=1 but not in protected groups (orphaned)
-                    risk_level = "Medium"
-                    recommendations.append("Orphaned AdminSDHolder - may indicate past privilege or misconfiguration")
+                    # User has adminCount=1 but not in protected groups (orphaned AdminSDHolder)
+                    if not in_protected_users_group:
+                        risk_level = "Medium"
+                        recommendations.append("INVESTIGATE: Orphaned AdminCount=1 - Verify if user still has privileges, add to Protected Users if needed")
+                        security_notes.append("Orphaned AdminSDHolder attribute - User may have been removed from privileged groups. Missing Protected Users protection")
+                    else:
+                        risk_level = "Low"
+                        recommendations.append("In Protected Users group - Secure")
+                        security_notes.append("Has Protected Users hardening despite orphaned adminCount")
                 elif not is_user and not is_protected_group_object:
                     # Non-standard group with adminCount=1
-                    risk_level = "Medium"
-                    recommendations.append("Non-standard group with AdminCount=1 - review membership and purpose")
+                    risk_level = "Info"
+                    recommendations.append("REVIEW: Non-standard group with AdminCount=1 - Verify members are in Protected Users group")
+                    security_notes.append("Custom group with adminCount=1 - Review membership for privileged users")
                 
                 # Get last logon (only for users, not groups)
                 last_logon_str = "N/A"
@@ -4782,7 +4803,8 @@ class PyADRecon:
                     "In Protected Users Group": "Yes" if in_protected_users_group else "No",
                     "Risk Level": risk_level,
                     "Recommendations": "; ".join(recommendations) if recommendations else "None",
-                    "Protected Group Membership": "; ".join(protected_group_membership) if protected_group_membership else "None",
+                    "AdminSDHolder Protected Group Membership": "; ".join(protected_group_membership) if protected_group_membership else "None",
+                    "Security Analysis": "; ".join(security_notes) if security_notes else "N/A",
                     "SID": sid_to_string(get_attr(entry, 'objectSid')),
                     "Last Modified": format_datetime(get_attr(entry, 'whenChanged')),
                     "Distinguished Name": get_attr(entry, 'distinguishedName', ''),
@@ -4792,8 +4814,29 @@ class PyADRecon:
             logger.warning(f"Error collecting protected groups: {e}")
             logger.debug(f"Exception details: ", exc_info=True)
 
+        # Analyze results and provide actionable insights
+        total_count = len(results)
+        high_risk_count = sum(1 for r in results if r['Type'] == 'User' and r['Risk Level'].upper() == 'HIGH')
+        medium_risk_count = sum(1 for r in results if r['Type'] == 'User' and r['Risk Level'].upper() == 'MEDIUM')
+        users_in_protected_users = sum(1 for r in results if r['Type'] == 'User' and r['In Protected Users Group'] == 'Yes')
+        total_users = sum(1 for r in results if r['Type'] == 'User')
+        
         self.results['ProtectedGroups'] = results
-        logger.info(f"    Found {len(results)} accounts with AdminCount=1")
+        logger.info(f"    Found {total_count} AdminSDHolder objects ({total_users} users, {total_count - total_users} groups)")
+        
+        if high_risk_count > 0:
+            logger.warning(f"    🚨 CRITICAL: {high_risk_count} Tier-0 privileged user(s) NOT in 'Protected Users' group - IMMEDIATE ACTION REQUIRED")
+            logger.warning(f"    ⚠ These are high-value targets vulnerable to credential theft attacks")
+        
+        if medium_risk_count > 0:
+            logger.warning(f"    ⚠ {medium_risk_count} account(s) with MEDIUM risk - Review recommendations for Protected Users group membership")
+        
+        if users_in_protected_users > 0:
+            logger.info(f"    ✓ {users_in_protected_users} user(s) properly secured in 'Protected Users' group")
+        
+        if high_risk_count == 0 and total_users > 0:
+            logger.info(f"    ✓ All Tier-0 privileged users are properly protected")
+        
         return results
 
     def collect_krbtgt(self) -> List[Dict]:
