@@ -894,7 +894,7 @@ class DashboardGenerator:
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                <tr v-for="template in vulnerableCertTemplates" :key="template['Template Name']">
+                                <tr v-for="template in paginatedVulnCertTemplates" :key="template['Template Name']">
                                     <td class="px-6 py-4 whitespace-nowrap font-medium">{{{{ template['Template Name'] }}}}</td>
                                     <td class="px-6 py-4">
                                         <span v-if="template['ESC Vulnerabilities'] !== 'None'" class="text-red-600 dark:text-red-400 font-semibold">
@@ -918,6 +918,33 @@ class DashboardGenerator:
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                    
+                    <!-- Pagination for Vulnerable Certificate Templates -->
+                    <div v-if="Math.ceil(vulnerableCertTemplates.length / itemsPerPage) > 1" class="flex items-center justify-between bg-gray-50 dark:bg-gray-700 px-4 py-3 mt-4 rounded-lg">
+                        <div class="flex-1 flex justify-between sm:hidden">
+                            <button @click="vulnCertTemplatePage = Math.max(1, vulnCertTemplatePage - 1)" :disabled="vulnCertTemplatePage === 1" class="pagination-btn">Previous</button>
+                            <span class="text-sm text-gray-700 dark:text-gray-300">Page {{{{ vulnCertTemplatePage }}}} of {{{{ Math.ceil(vulnerableCertTemplates.length / itemsPerPage) }}}}</span>
+                            <button @click="vulnCertTemplatePage = Math.min(Math.ceil(vulnerableCertTemplates.length / itemsPerPage), vulnCertTemplatePage + 1)" :disabled="vulnCertTemplatePage === Math.ceil(vulnerableCertTemplates.length / itemsPerPage)" class="pagination-btn">Next</button>
+                        </div>
+                        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                            <div>
+                                <p class="text-sm text-gray-700 dark:text-gray-300">
+                                    Showing <span class="font-medium">{{{{ (vulnCertTemplatePage - 1) * itemsPerPage + 1 }}}}</span> to <span class="font-medium">{{{{ Math.min(vulnCertTemplatePage * itemsPerPage, vulnerableCertTemplates.length) }}}}</span> of <span class="font-medium">{{{{ vulnerableCertTemplates.length }}}}</span> vulnerable templates
+                                </p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button @click="vulnCertTemplatePage = Math.max(1, vulnCertTemplatePage - 1)" :disabled="vulnCertTemplatePage === 1" class="pagination-btn">
+                                    <i class="fas fa-chevron-left"></i> Previous
+                                </button>
+                                <span class="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
+                                    Page {{{{ vulnCertTemplatePage }}}} of {{{{ Math.ceil(vulnerableCertTemplates.length / itemsPerPage) }}}}
+                                </span>
+                                <button @click="vulnCertTemplatePage = Math.min(Math.ceil(vulnerableCertTemplates.length / itemsPerPage), vulnCertTemplatePage + 1)" :disabled="vulnCertTemplatePage === Math.ceil(vulnerableCertTemplates.length / itemsPerPage)" class="pagination-btn">
+                                    Next <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1146,7 +1173,7 @@ class DashboardGenerator:
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                <tr v-for="user in usersWithPasswordsInInfo.slice(0, 50)" :key="user.UserName">
+                                <tr v-for="user in paginatedCleartextPasswords" :key="user.UserName">
                                     <td class="px-6 py-4 whitespace-nowrap font-medium">{{{{ user.UserName }}}}</td>
                                     <td class="px-6 py-4">{{{{ user.Name }}}}</td>
                                     <td class="px-6 py-4 text-sm">
@@ -1164,6 +1191,33 @@ class DashboardGenerator:
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                    
+                    <!-- Pagination for Cleartext Passwords -->
+                    <div v-if="Math.ceil(usersWithPasswordsInInfo.length / itemsPerPage) > 1" class="flex items-center justify-between bg-gray-50 dark:bg-gray-700 px-4 py-3 mt-4 rounded-lg">
+                        <div class="flex-1 flex justify-between sm:hidden">
+                            <button @click="cleartextPage = Math.max(1, cleartextPage - 1)" :disabled="cleartextPage === 1" class="pagination-btn">Previous</button>
+                            <span class="text-sm text-gray-700 dark:text-gray-300">Page {{{{ cleartextPage }}}} of {{{{ Math.ceil(usersWithPasswordsInInfo.length / itemsPerPage) }}}}</span>
+                            <button @click="cleartextPage = Math.min(Math.ceil(usersWithPasswordsInInfo.length / itemsPerPage), cleartextPage + 1)" :disabled="cleartextPage === Math.ceil(usersWithPasswordsInInfo.length / itemsPerPage)" class="pagination-btn">Next</button>
+                        </div>
+                        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                            <div>
+                                <p class="text-sm text-gray-700 dark:text-gray-300">
+                                    Showing <span class="font-medium">{{{{ (cleartextPage - 1) * itemsPerPage + 1 }}}}</span> to <span class="font-medium">{{{{ Math.min(cleartextPage * itemsPerPage, usersWithPasswordsInInfo.length) }}}}</span> of <span class="font-medium">{{{{ usersWithPasswordsInInfo.length }}}}</span> users with cleartext passwords
+                                </p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button @click="cleartextPage = Math.max(1, cleartextPage - 1)" :disabled="cleartextPage === 1" class="pagination-btn">
+                                    <i class="fas fa-chevron-left"></i> Previous
+                                </button>
+                                <span class="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
+                                    Page {{{{ cleartextPage }}}} of {{{{ Math.ceil(usersWithPasswordsInInfo.length / itemsPerPage) }}}}
+                                </span>
+                                <button @click="cleartextPage = Math.min(Math.ceil(usersWithPasswordsInInfo.length / itemsPerPage), cleartextPage + 1)" :disabled="cleartextPage === Math.ceil(usersWithPasswordsInInfo.length / itemsPerPage)" class="pagination-btn">
+                                    Next <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1798,21 +1852,31 @@ class DashboardGenerator:
                                 </tr>
                             </tbody>
                         </table>
-                        <div v-if="filteredUsers.length > itemsPerPage" class="flex justify-between items-center py-4">
-                            <div class="text-sm text-gray-500 dark:text-gray-400">
-                                Showing {{{{ ((userPage - 1) * itemsPerPage) + 1 }}}} to {{{{ Math.min(userPage * itemsPerPage, filteredUsers.length) }}}} of {{{{ filteredUsers.length }}}} users
+                        
+                        <!-- Pagination for Users -->
+                        <div v-if="Math.ceil(filteredUsers.length / itemsPerPage) > 1" class="flex items-center justify-between bg-gray-50 dark:bg-gray-700 px-4 py-3 mt-4 rounded-lg">
+                            <div class="flex-1 flex justify-between sm:hidden">
+                                <button @click="userPage = Math.max(1, userPage - 1)" :disabled="userPage === 1" class="pagination-btn">Previous</button>
+                                <span class="text-sm text-gray-700 dark:text-gray-300">Page {{{{ userPage }}}} of {{{{ Math.ceil(filteredUsers.length / itemsPerPage) }}}}</span>
+                                <button @click="userPage = Math.min(Math.ceil(filteredUsers.length / itemsPerPage), userPage + 1)" :disabled="userPage === Math.ceil(filteredUsers.length / itemsPerPage)" class="pagination-btn">Next</button>
                             </div>
-                            <div class="flex gap-2">
-                                <button @click="userPage = Math.max(1, userPage - 1)" :disabled="userPage === 1" 
-                                        class="px-3 py-1 rounded bg-blue-600 text-white disabled:bg-gray-400">
-                                    <i class="fas fa-chevron-left"></i> Previous
-                                </button>
-                                <span class="px-3 py-1">Page {{{{ userPage }}}} of {{{{ Math.ceil(filteredUsers.length / itemsPerPage) }}}}</span>
-                                <button @click="userPage = Math.min(Math.ceil(filteredUsers.length / itemsPerPage), userPage + 1)" 
-                                        :disabled="userPage >= Math.ceil(filteredUsers.length / itemsPerPage)"
-                                        class="px-3 py-1 rounded bg-blue-600 text-white disabled:bg-gray-400">
-                                    Next <i class="fas fa-chevron-right"></i>
-                                </button>
+                            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-700 dark:text-gray-300">
+                                        Showing <span class="font-medium">{{{{ (userPage - 1) * itemsPerPage + 1 }}}}</span> to <span class="font-medium">{{{{ Math.min(userPage * itemsPerPage, filteredUsers.length) }}}}</span> of <span class="font-medium">{{{{ filteredUsers.length }}}}</span> users
+                                    </p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button @click="userPage = Math.max(1, userPage - 1)" :disabled="userPage === 1" class="pagination-btn">
+                                        <i class="fas fa-chevron-left"></i> Previous
+                                    </button>
+                                    <span class="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
+                                        Page {{{{ userPage }}}} of {{{{ Math.ceil(filteredUsers.length / itemsPerPage) }}}}
+                                    </span>
+                                    <button @click="userPage = Math.min(Math.ceil(filteredUsers.length / itemsPerPage), userPage + 1)" :disabled="userPage === Math.ceil(filteredUsers.length / itemsPerPage)" class="pagination-btn">
+                                        Next <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1939,21 +2003,31 @@ class DashboardGenerator:
                             </tbody>
                         </table>
                     </div>
-                    <div v-if="filteredComputers.length > itemsPerPage" class="flex justify-between items-center py-4">
-                        <div class="text-sm text-gray-500 dark:text-gray-400">
-                            Showing {{{{ ((computerPage - 1) * itemsPerPage) + 1 }}}} to {{{{ Math.min(computerPage * itemsPerPage, filteredComputers.length) }}}} of {{{{ filteredComputers.length }}}} computers
+                    
+                    <!-- Pagination for Computers -->
+                    <div v-if="Math.ceil(filteredComputers.length / itemsPerPage) > 1" class="flex items-center justify-between bg-gray-50 dark:bg-gray-700 px-4 py-3 mt-4 rounded-lg">
+                        <div class="flex-1 flex justify-between sm:hidden">
+                            <button @click="computerPage = Math.max(1, computerPage - 1)" :disabled="computerPage === 1" class="pagination-btn">Previous</button>
+                            <span class="text-sm text-gray-700 dark:text-gray-300">Page {{{{ computerPage }}}} of {{{{ Math.ceil(filteredComputers.length / itemsPerPage) }}}}</span>
+                            <button @click="computerPage = Math.min(Math.ceil(filteredComputers.length / itemsPerPage), computerPage + 1)" :disabled="computerPage === Math.ceil(filteredComputers.length / itemsPerPage)" class="pagination-btn">Next</button>
                         </div>
-                        <div class="flex gap-2">
-                            <button @click="computerPage = Math.max(1, computerPage - 1)" :disabled="computerPage === 1" 
-                                    class="px-3 py-1 rounded bg-blue-600 text-white disabled:bg-gray-400">
-                                <i class="fas fa-chevron-left"></i> Previous
-                            </button>
-                            <span class="px-3 py-1">Page {{{{ computerPage }}}} of {{{{ Math.ceil(filteredComputers.length / itemsPerPage) }}}}</span>
-                            <button @click="computerPage = Math.min(Math.ceil(filteredComputers.length / itemsPerPage), computerPage + 1)" 
-                                    :disabled="computerPage >= Math.ceil(filteredComputers.length / itemsPerPage)"
-                                    class="px-3 py-1 rounded bg-blue-600 text-white disabled:bg-gray-400">
-                                Next <i class="fas fa-chevron-right"></i>
-                            </button>
+                        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                            <div>
+                                <p class="text-sm text-gray-700 dark:text-gray-300">
+                                    Showing <span class="font-medium">{{{{ (computerPage - 1) * itemsPerPage + 1 }}}}</span> to <span class="font-medium">{{{{ Math.min(computerPage * itemsPerPage, filteredComputers.length) }}}}</span> of <span class="font-medium">{{{{ filteredComputers.length }}}}</span> computers
+                                </p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button @click="computerPage = Math.max(1, computerPage - 1)" :disabled="computerPage === 1" class="pagination-btn">
+                                    <i class="fas fa-chevron-left"></i> Previous
+                                </button>
+                                <span class="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
+                                    Page {{{{ computerPage }}}} of {{{{ Math.ceil(filteredComputers.length / itemsPerPage) }}}}
+                                </span>
+                                <button @click="computerPage = Math.min(Math.ceil(filteredComputers.length / itemsPerPage), computerPage + 1)" :disabled="computerPage === Math.ceil(filteredComputers.length / itemsPerPage)" class="pagination-btn">
+                                    Next <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1988,6 +2062,8 @@ class DashboardGenerator:
                     kerberoastPage: 1,
                     asrepPage: 1,
                     lapsPage: 1,
+                    vulnCertTemplatePage: 1,
+                    cleartextPage: 1,
                     itemsPerPage: 50,
                     certTemplateFilter: 'all',
                     certTemplateRiskFilter: 'risk-gt-none',
@@ -2692,6 +2768,35 @@ class DashboardGenerator:
                     return filtered.slice(start, end);
                 }},
                 
+                paginatedVulnCertTemplates() {{
+                    const start = (this.vulnCertTemplatePage - 1) * this.itemsPerPage;
+                    const end = start + this.itemsPerPage;
+                    return this.vulnerableCertTemplates.slice(start, end);
+                }},
+                
+                paginatedCleartextPasswords() {{
+                    let filtered = this.usersWithPasswordsInInfo;
+                    
+                    // Apply sorting
+                    if (this.cleartextSortColumn) {{
+                        const direction = this.cleartextSortDirection === 'asc' ? 1 : -1;
+                        const column = this.cleartextSortColumn;
+                        
+                        filtered.sort((a, b) => {{
+                            const aValue = (a[column] || '').toString().toLowerCase();
+                            const bValue = (b[column] || '').toString().toLowerCase();
+                            
+                            if (aValue < bValue) return -1 * direction;
+                            if (aValue > bValue) return 1 * direction;
+                            return 0;
+                        }});
+                    }}
+                    
+                    const start = (this.cleartextPage - 1) * this.itemsPerPage;
+                    const end = start + this.itemsPerPage;
+                    return filtered.slice(start, end);
+                }},
+                
                 filteredComputers() {{
                     let filtered = [...this.computers];
                     
@@ -2936,6 +3041,7 @@ class DashboardGenerator:
                         this.vulnCertTemplateSortColumn = column;
                         this.vulnCertTemplateSortDirection = 'asc';
                     }}
+                    this.vulnCertTemplatePage = 1; // Reset to first page when sorting
                 }},
                 
                 sortKerberoast(column) {{
@@ -2965,6 +3071,7 @@ class DashboardGenerator:
                         this.cleartextSortColumn = column;
                         this.cleartextSortDirection = 'asc';
                     }}
+                    this.cleartextPage = 1; // Reset to first page when sorting
                 }},
                 
                 sortLaps(column) {{
