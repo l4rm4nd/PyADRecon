@@ -22,7 +22,14 @@ class DashboardGenerator:
         
     def load_csv_data(self):
         """Load all CSV files into memory."""
-        csv_files = list(self.csv_dir.glob("*.csv"))
+        # Check if CSV-Files subdirectory exists
+        csv_subdir = self.csv_dir / "CSV-Files"
+        if csv_subdir.is_dir():
+            csv_source = csv_subdir
+        else:
+            csv_source = self.csv_dir
+            
+        csv_files = list(csv_source.glob("*.csv"))
         
         for csv_file in csv_files:
             module_name = csv_file.stem
@@ -537,6 +544,91 @@ class DashboardGenerator:
                                     <dd class="text-3xl font-semibold text-gray-900 dark:text-white">{{{{ machineAccountQuota }}}}</dd>
                                     <dd class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                         Computers can be added
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div v-if="unconstrainedDelegationAccounts.length > 0" @click="navigateToSection('findings', 'unconstrained-delegation-section')" class="stat-card bg-white dark:bg-gray-800 rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-red-100 dark:bg-red-900/30 rounded-md p-3">
+                                <i class="fas fa-user-secret text-red-600 text-2xl"></i>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Unconstrained Delegation</dt>
+                                    <dd class="text-3xl font-semibold text-gray-900 dark:text-white">{{{{ unconstrainedDelegationAccounts.length }}}}</dd>
+                                    <dd class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        Impersonation risk
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div v-if="constrainedDelegationRisks.length > 0" @click="navigateToSection('findings', 'constrained-delegation-section')" class="stat-card bg-white dark:bg-gray-800 rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-orange-100 dark:bg-orange-900/30 rounded-md p-3">
+                                <i class="fas fa-exchange-alt text-orange-600 text-2xl"></i>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Constrained Delegation</dt>
+                                    <dd class="text-3xl font-semibold text-gray-900 dark:text-white">{{{{ constrainedDelegationRisks.length }}}}</dd>
+                                    <dd class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        Impersonation risk
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div v-if="objectsWithSIDHistory.length > 0" @click="navigateToSection('findings', 'sidhistory-section')" class="stat-card bg-white dark:bg-gray-800 rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-purple-100 dark:bg-purple-900/30 rounded-md p-3">
+                                <i class="fas fa-history text-purple-600 text-2xl"></i>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">SID History</dt>
+                                    <dd class="text-3xl font-semibold text-gray-900 dark:text-white">{{{{ objectsWithSIDHistory.length }}}}</dd>
+                                    <dd class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        Privilege escalation risk
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div v-if="foreignSecurityPrincipals.length > 0" @click="navigateToSection('findings', 'foreign-principals-section')" class="stat-card bg-white dark:bg-gray-800 rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-pink-100 dark:bg-pink-900/30 rounded-md p-3">
+                                <i class="fas fa-globe text-pink-600 text-2xl"></i>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Foreign Principals</dt>
+                                    <dd class="text-3xl font-semibold text-gray-900 dark:text-white">{{{{ foreignSecurityPrincipals.length }}}}</dd>
+                                    <dd class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        In privileged groups
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div v-if="vulnerableGMSA.length > 0" @click="navigateToSection('findings', 'gmsa-vulnerabilities-section')" class="stat-card bg-white dark:bg-gray-800 rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-yellow-100 dark:bg-yellow-900/30 rounded-md p-3">
+                                <i class="fas fa-user-cog text-yellow-600 text-2xl"></i>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">gMSA Misconfigurations</dt>
+                                    <dd class="text-3xl font-semibold text-gray-900 dark:text-white">{{{{ vulnerableGMSA.length }}}}</dd>
+                                    <dd class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        Permission issues
                                     </dd>
                                 </dl>
                             </div>
@@ -1597,6 +1689,413 @@ class DashboardGenerator:
                     </div>
                 </div>
 
+                <!-- Unconstrained Delegation Section -->
+                <div id="unconstrained-delegation-section" v-if="unconstrainedDelegationAccounts.length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                        <i class="fas fa-user-secret text-red-600"></i> Unconstrained Delegation Accounts ({{{{ unconstrainedDelegationAccounts.length }}}})
+                    </h2>
+                    <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 mb-6">
+                        <h3 class="font-semibold text-red-800 dark:text-red-200 mb-2">🎯 Issue & Impact</h3>
+                        <p class="text-red-700 dark:text-red-300 text-sm mb-3">
+                            Accounts with unconstrained delegation can impersonate any user in the domain who authenticates to them. When a user authenticates, their TGT is stored in the server's memory, allowing full domain compromise if the delegated account is breached. Risk levels: CRITICAL (enabled + privileged + active), HIGH (enabled + privileged OR active), MEDIUM (enabled but dormant), LOW (disabled).
+                        </p>
+                        <h3 class="font-semibold text-red-800 dark:text-red-200 mb-2">⚔️ Attacker Benefit</h3>
+                        <p class="text-red-700 dark:text-red-300 text-sm mb-3">
+                            Attackers who compromise an unconstrained delegation account can extract TGTs from LSASS memory and impersonate ANY domain user (including Domain Admins) who connects to the compromised system. Active accounts (recent logon ≤90 days) are higher risk as they're more likely to be targeted and have cached credentials.
+                        </p>
+                        <h3 class="font-semibold text-red-800 dark:text-red-200 mb-2">🔓 Exploitation Method</h3>
+                        <p class="text-red-700 dark:text-red-300 text-sm mb-3">
+                            Tools: Rubeus, Mimikatz (sekurlsa::tickets). Attacker forces or waits for privileged user authentication to the compromised server (printer bug, coercion techniques), extracts TGT using Mimikatz, performs Pass-the-Ticket to impersonate the privileged user. Works against Domain Admins, service accounts, and any other users.
+                        </p>
+                        <h3 class="font-semibold text-red-800 dark:text-red-200 mb-2">💡 Remediation</h3>
+                        <p class="text-red-700 dark:text-red-300 text-sm">
+                            <strong>Prioritize by risk level:</strong> Address CRITICAL (enabled + privileged + active) first. Migrate to constrained delegation (RBCD) or traditional constrained delegation instead. Add privileged accounts to "Protected Users" security group. Mark sensitive accounts as "Account is sensitive and cannot be delegated." Only Domain Controllers should have unconstrained delegation. Consider disabling dormant accounts. Review LogonAge to identify actively used vs. dormant delegated accounts.
+                        </p>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                <tr>
+                                    <th @click="sortDelegation('Type')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Type <i v-if="delegationSortColumn === 'Type'" :class="delegationSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th @click="sortDelegation('Name')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Name <i v-if="delegationSortColumn === 'Name'" :class="delegationSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th @click="sortDelegation('IPv4Address')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        IP Address <i v-if="delegationSortColumn === 'IPv4Address'" :class="delegationSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th @click="sortDelegation('Delegation Type')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Delegation <i v-if="delegationSortColumn === 'Delegation Type'" :class="delegationSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th @click="sortDelegation('Delegation Protocol')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Protocol <i v-if="delegationSortColumn === 'Delegation Protocol'" :class="delegationSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th @click="sortDelegation('AdminCount')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700" title="AdminCount=1 indicates membership in protected administrative groups (Domain Admins, Enterprise Admins, etc.)">
+                                        Privileged <i v-if="delegationSortColumn === 'AdminCount'" :class="delegationSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th @click="sortDelegation('Enabled')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Enabled <i v-if="delegationSortColumn === 'Enabled'" :class="delegationSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th @click="sortDelegation('Logon Age (days)')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700" title="Days since last logon - active (≤90) vs dormant (>90)">
+                                        LogonAge <i v-if="delegationSortColumn === 'Logon Age (days)'" :class="delegationSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th @click="sortDelegation('Risk Level')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Risk <i v-if="delegationSortColumn === 'Risk Level'" :class="delegationSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                <tr v-for="account in unconstrainedDelegationAccounts" :key="account.DN">
+                                    <td class="px-6 py-4">
+                                        <span v-if="account.Type === 'User'" class="badge badge-info">User</span>
+                                        <span v-else class="badge badge-purple">Computer</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="font-medium">{{{{ account.Name }}}}</div>
+                                        <div v-if="account['DNS Hostname']" class="text-xs text-gray-500 dark:text-gray-400">{{{{ account['DNS Hostname'] }}}}</div>
+                                        <div v-if="account['Operating System']" class="text-xs text-gray-500 dark:text-gray-400">{{{{ account['Operating System'] }}}}</div>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">{{{{ account['IPv4Address'] || '-' }}}}</td>
+                                    <td class="px-6 py-4">
+                                        <span class="badge badge-warning">{{{{ account['Delegation Type'] || 'Unconstrained' }}}}</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">{{{{ account['Delegation Protocol'] || '-' }}}}</td>
+                                    <td class="px-6 py-4">
+                                        <span v-if="account.AdminCount === '1'" class="badge badge-critical" title="Member of protected administrative groups">Yes</span>
+                                        <span v-else class="badge badge-none">No</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span v-if="account.Enabled === 'True' || account.Enabled === 'TRUE'" class="badge badge-high">Yes</span>
+                                        <span v-else class="badge badge-none">No</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span v-if="parseInt(account['Logon Age (days)']) <= 90" class="badge badge-high" title="Active - logged in recently">{{{{ account['Logon Age (days)'] || '-' }}}}</span>
+                                        <span v-else-if="account['Logon Age (days)']" class="badge badge-medium" title="Dormant - no recent logon">{{{{ account['Logon Age (days)'] }}}}</span>
+                                        <span v-else class="text-sm text-gray-500">Never</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span v-if="account['Risk Level'] === 'CRITICAL'" class="badge badge-critical">CRITICAL</span>
+                                        <span v-else-if="account['Risk Level'] === 'HIGH'" class="badge badge-high">HIGH</span>
+                                        <span v-else-if="account['Risk Level'] === 'MEDIUM'" class="badge badge-medium">MEDIUM</span>
+                                        <span v-else class="badge badge-low">LOW</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Constrained Delegation Section -->
+                <div id="constrained-delegation-section" v-if="constrainedDelegationRisks.length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                        <i class="fas fa-exchange-alt text-orange-600"></i> Constrained Delegation Accounts ({{{{ constrainedDelegationRisks.length }}}})
+                    </h2>
+                    <div class="bg-orange-50 dark:bg-orange-900/20 border-l-4 border-orange-500 p-4 mb-6">
+                        <h3 class="font-semibold text-orange-800 dark:text-orange-200 mb-2">🎯 Issue & Impact</h3>
+                        <p class="text-orange-700 dark:text-orange-300 text-sm mb-3">
+                            Constrained delegation restricts delegation to specific services via msDS-AllowedToDelegateTo. Protocol transition (TrustedToAuthForDelegation / "Any" protocol) is CRITICAL as it allows delegation using any authentication method. Service Principal Names (SPNs) are customizable by AD admins - common high-value targets include LDAP/ (DCSync), CIFS/HOST/ (file access, remote execution), MSSQL/ (database, xp_cmdshell), HTTP/WSMAN/ (web services, PowerShell remoting), and TERMSRV/ (RDP). Risk levels: CRITICAL (protocol transition + enabled OR delegation to DCs), HIGH (sensitive services + enabled), MEDIUM (high-risk services OR disabled critical services), LOW (disabled + non-critical).
+                        </p>
+                        <h3 class="font-semibold text-orange-800 dark:text-orange-200 mb-2">⚔️ Attacker Benefit</h3>
+                        <p class="text-orange-700 dark:text-orange-300 text-sm mb-3">
+                            Attackers can request service tickets (TGS) on behalf of ANY user (including Domain Admins) to the constrained services. LDAP delegation enables AD modifications and DCSync. CIFS/HOST delegation to DCs enables file access and scheduled task creation. MSSQL delegation grants database access and potential command execution. WSMAN/TERMSRV delegation allows remote system access. Protocol transition eliminates the need for forwardable TGT.
+                        </p>
+                        <h3 class="font-semibold text-orange-800 dark:text-orange-200 mb-2">🔓 Exploitation Method</h3>
+                        <p class="text-orange-700 dark:text-orange-300 text-sm mb-3">
+                            Tools: Rubeus (s4u), Impacket (getST.py). Attacker uses S4U2Self and S4U2Proxy Kerberos extensions to obtain service tickets for privileged users. If protocol transition is enabled, attacker doesn't need forwardable TGT - any authentication works. Example: delegation to MSSQL/sqlserver.domain.com allows impersonating Domain Admin to execute xp_cmdshell. Can bypass "Protected Users" in some configurations.
+                        </p>
+                        <h3 class="font-semibold text-orange-800 dark:text-orange-200 mb-2">💡 Remediation</h3>
+                        <p class="text-orange-700 dark:text-orange-300 text-sm">
+                            <strong>Prioritize by risk:</strong> Address CRITICAL (protocol transition, delegation to DCs) first, then HIGH (LDAP/CIFS/HOST to any server). Remove unnecessary delegations. Disable protocol transition (TrustedToAuthForDelegation) unless absolutely required. Use resource-based constrained delegation (RBCD) with explicit allow lists instead of traditional constrained delegation. Mark privileged accounts as "Account is sensitive and cannot be delegated." Regularly audit msDS-AllowedToDelegateTo attribute. Services showing "Any" require immediate investigation. Consider disabling dormant delegated accounts.
+                        </p>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                <tr>
+                                    <th @click="sortDelegation('Type')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Type <i v-if="delegationSortColumn === 'Type'" :class="delegationSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th @click="sortDelegation('Name')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Name <i v-if="delegationSortColumn === 'Name'" :class="delegationSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th @click="sortDelegation('IPv4Address')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        IP Address <i v-if="delegationSortColumn === 'IPv4Address'" :class="delegationSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th @click="sortDelegation('Delegation Services')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Delegation <i v-if="delegationSortColumn === 'Delegation Services'" :class="delegationSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th @click="sortDelegation('Delegation Protocol')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700" title="'Any' indicates protocol transition (TrustedToAuthForDelegation) is enabled">
+                                        Protocol <i v-if="delegationSortColumn === 'Delegation Protocol'" :class="delegationSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th @click="sortDelegation('AdminCount')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700" title="AdminCount=1 indicates membership in protected administrative groups">
+                                        Privileged <i v-if="delegationSortColumn === 'AdminCount'" :class="delegationSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th @click="sortDelegation('Enabled')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Enabled <i v-if="delegationSortColumn === 'Enabled'" :class="delegationSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th @click="sortDelegation('Logon Age (days)')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700" title="Days since last logon - active (≤90) vs dormant (>90)">
+                                        LogonAge <i v-if="delegationSortColumn === 'Logon Age (days)'" :class="delegationSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th @click="sortDelegation('Risk Level')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Risk <i v-if="delegationSortColumn === 'Risk Level'" :class="delegationSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                <tr v-for="account in constrainedDelegationRisks" :key="account.DN">
+                                    <td class="px-6 py-4">
+                                        <span v-if="account.Type === 'User'" class="badge badge-info">User</span>
+                                        <span v-else class="badge badge-purple">Computer</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="font-medium">{{{{ account.Name }}}}</div>
+                                        <div v-if="account['DNS Hostname']" class="text-xs text-gray-500 dark:text-gray-400">{{{{ account['DNS Hostname'] }}}}</div>
+                                        <div v-if="account['Operating System']" class="text-xs text-gray-500 dark:text-gray-400">{{{{ account['Operating System'] }}}}</div>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">{{{{ account['IPv4Address'] || '-' }}}}</td>
+                                    <td class="px-6 py-4 text-sm max-w-md" :title="account['Delegation Services']">
+                                        <span v-if="account['Delegation Services'] === 'Any'" class="badge badge-critical">ANY (Proto Transition!)</span>
+                                        <span v-else class="truncate block">{{{{ account['Delegation Services'] }}}}</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span v-if="account['Delegation Protocol'] === 'Any'" class="badge badge-critical" title="Protocol Transition enabled - can delegate with ANY auth method">Any</span>
+                                        <span v-else class="badge badge-amber">{{{{ account['Delegation Protocol'] || 'Kerberos' }}}}</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span v-if="account.AdminCount === '1'" class="badge badge-critical" title="Member of protected administrative groups">Yes</span>
+                                        <span v-else class="badge badge-none">No</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span v-if="account.Enabled === 'True' || account.Enabled === 'TRUE'" class="badge badge-high">Yes</span>
+                                        <span v-else class="badge badge-none">No</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span v-if="parseInt(account['Logon Age (days)']) <= 90" class="badge badge-high" title="Active - logged in recently">{{{{ account['Logon Age (days)'] || '-' }}}}</span>
+                                        <span v-else-if="account['Logon Age (days)']" class="badge badge-medium" title="Dormant - no recent logon">{{{{ account['Logon Age (days)'] }}}}</span>
+                                        <span v-else class="text-sm text-gray-500">Never</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span v-if="account['Risk Level'] === 'CRITICAL'" class="badge badge-critical">CRITICAL</span>
+                                        <span v-else-if="account['Risk Level'] === 'HIGH'" class="badge badge-high">HIGH</span>
+                                        <span v-else-if="account['Risk Level'] === 'MEDIUM'" class="badge badge-medium">MEDIUM</span>
+                                        <span v-else class="badge badge-low">LOW</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SID History Section -->
+                <div id="sidhistory-section" v-if="objectsWithSIDHistory.length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                        <i class="fas fa-history text-purple-600"></i> Objects with SID History ({{{{ objectsWithSIDHistory.length }}}})
+                    </h2>
+                    <div class="bg-purple-50 dark:bg-purple-900/20 border-l-4 border-purple-500 p-4 mb-6">
+                        <h3 class="font-semibold text-purple-800 dark:text-purple-200 mb-2">🎯 Issue & Impact</h3>
+                        <p class="text-purple-700 dark:text-purple-300 text-sm mb-3">
+                            SID History attributes allow objects to retain access rights from previous domains after migration. However, SID History can be abused to inject privileged SIDs (e.g., Domain Admins) or maintain persistence through foreign domain SIDs after domain trusts are removed.
+                        </p>
+                        <h3 class="font-semibold text-purple-800 dark:text-purple-200 mb-2">⚔️ Attacker Benefit</h3>
+                        <p class="text-purple-700 dark:text-purple-300 text-sm mb-3">
+                            Attackers with sufficient privileges can inject arbitrary SIDs into SID History, effectively granting themselves Domain Admin or Enterprise Admin rights without modifying group memberships. SID History bypasses traditional group membership auditing and can persist across password changes.
+                        </p>
+                        <h3 class="font-semibold text-purple-800 dark:text-purple-200 mb-2">🔓 Exploitation Method</h3>
+                        <p class="text-purple-700 dark:text-purple-300 text-sm mb-3">
+                            Tools: Mimikatz (sid::add), PowerView, ADModule. Attackers with DCSync rights or DC compromise can add privileged SIDs to their account's SID History. During Kerberos authentication, all SIDs in SID History are added to the user's access token, granting immediate privileged access. SID filtering on trusts can be bypassed using Enterprise Admins SID.
+                        </p>
+                        <h3 class="font-semibold text-purple-800 dark:text-purple-200 mb-2">💡 Remediation</h3>
+                        <p class="text-purple-700 dark:text-purple-300 text-sm">
+                            <strong>Remove unnecessary SID History:</strong> After domain migrations are complete, clear SID History attributes using PowerShell (Set-ADUser -Clear sIDHistory). Enable SID filtering on all external domain trusts. Monitor and alert on SID History modifications using SIEM. Regularly audit SID History, especially checking for privileged SIDs (500-519 range) or foreign domain SIDs.
+                        </p>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                <tr>
+                                    <th @click="sortSIDHistory('Type')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Type <i v-if="sidHistorySortColumn === 'Type'" :class="sidHistorySortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th @click="sortSIDHistory('Name')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Name <i v-if="sidHistorySortColumn === 'Name'" :class="sidHistorySortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                        SID History
+                                    </th>
+                                    <th @click="sortSIDHistory('Foreign Domain')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Foreign <i v-if="sidHistorySortColumn === 'Foreign Domain'" :class="sidHistorySortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th @click="sortSIDHistory('Privileged SID')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Privileged <i v-if="sidHistorySortColumn === 'Privileged SID'" :class="sidHistorySortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th @click="sortSIDHistory('Risk Level')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Risk <i v-if="sidHistorySortColumn === 'Risk Level'" :class="sidHistorySortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                <tr v-for="obj in objectsWithSIDHistory" :key="obj.DN">
+                                    <td class="px-6 py-4">
+                                        <span v-if="obj.Type === 'User'" class="badge badge-info">User</span>
+                                        <span v-else-if="obj.Type === 'Computer'" class="badge badge-purple">Computer</span>
+                                        <span v-else class="badge badge-cyan">Group</span>
+                                    </td>
+                                    <td class="px-6 py-4 font-medium">{{{{ obj.Name }}}}</td>
+                                    <td class="px-6 py-4 text-xs font-mono max-w-xs truncate" :title="obj.SIDHistory">
+                                        {{{{ obj.SIDHistory }}}}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span v-if="obj['Foreign Domain'] === 'Yes'" class="badge badge-high">Yes</span>
+                                        <span v-else class="badge badge-none">No</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span v-if="obj['Privileged SID'] === 'Yes'" class="badge badge-critical">Yes</span>
+                                        <span v-else-if="obj['Privileged SID'] === 'No'" class="badge badge-none">No</span>
+                                        <span v-else class="badge badge-none">N/A</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span v-if="obj['Risk Level'] === 'CRITICAL'" class="badge badge-critical">CRITICAL</span>
+                                        <span v-else-if="obj['Risk Level'] === 'HIGH'" class="badge badge-high">HIGH</span>
+                                        <span v-else class="badge badge-medium">MEDIUM</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Foreign Security Principals Section -->
+                <div id="foreign-principals-section" v-if="foreignSecurityPrincipals.length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                        <i class="fas fa-globe text-pink-600"></i> Foreign Security Principals in Privileged Groups ({{{{ foreignSecurityPrincipals.length }}}})
+                    </h2>
+                    <div class="bg-pink-50 dark:bg-pink-900/20 border-l-4 border-pink-500 p-4 mb-6">
+                        <h3 class="font-semibold text-pink-800 dark:text-pink-200 mb-2">🎯 Issue & Impact</h3>
+                        <p class="text-pink-700 dark:text-pink-300 text-sm mb-3">
+                            Foreign Security Principals (FSPs) represent accounts from external trusted domains. When present in privileged groups like Domain Admins, they create cross-domain privilege escalation paths. Compromise of the external domain can lead to compromise of the local domain.
+                        </p>
+                        <h3 class="font-semibold text-pink-800 dark:text-pink-200 mb-2">⚔️ Attacker Benefit</h3>
+                        <p class="text-pink-700 dark:text-pink-300 text-sm mb-3">
+                            Attackers who compromise the trusted domain can leverage FSP memberships to gain privileged access in the trusting domain. This enables lateral movement across domain boundaries and can bypass security controls that only monitor local domain accounts. Foreign admin accounts are often overlooked in security audits.
+                        </p>
+                        <h3 class="font-semibold text-pink-800 dark:text-pink-200 mb-2">🔓 Exploitation Method</h3>
+                        <p class="text-pink-700 dark:text-pink-300 text-sm mb-3">
+                            Tools: BloodHound, PowerView, ADExplorer. Attackers use domain trust relationships to authenticate as foreign principals. Once authenticated, they inherit all group memberships including privileged groups. Common in forest trusts where Enterprise Admins have cross-domain access. FSPs can be used for persistence if trust is later broken.
+                        </p>
+                        <h3 class="font-semibold text-pink-800 dark:text-pink-200 mb-2">💡 Remediation</h3>
+                        <p class="text-pink-700 dark:text-pink-300 text-sm">
+                            <strong>Review and remove unnecessary FSPs:</strong> Remove foreign accounts from privileged groups unless absolutely required for business operations. Implement least-privilege access across trust boundaries. Enable SID filtering on external trusts to block foreign administrative SIDs. Use selective authentication on forest trusts. Regularly audit group memberships for foreign SIDs. Document and justify all cross-domain privileged access.
+                        </p>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                <tr>
+                                    <th @click="sortForeignPrincipals('Group Name')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Group <i v-if="foreignPrincipalsSortColumn === 'Group Name'" :class="foreignPrincipalsSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th @click="sortForeignPrincipals('Member Name')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Member <i v-if="foreignPrincipalsSortColumn === 'Member Name'" :class="foreignPrincipalsSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                        Foreign SID
+                                    </th>
+                                    <th @click="sortForeignPrincipals('Account Type')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Type <i v-if="foreignPrincipalsSortColumn === 'Account Type'" :class="foreignPrincipalsSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th @click="sortForeignPrincipals('Risk Level')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Risk <i v-if="foreignPrincipalsSortColumn === 'Risk Level'" :class="foreignPrincipalsSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                <tr v-for="fsp in foreignSecurityPrincipals" :key="fsp['Member SID']">
+                                    <td class="px-6 py-4 font-medium">{{{{ fsp['Group Name'] }}}}</td>
+                                    <td class="px-6 py-4">{{{{ fsp['Member Name'] }}}}</td>
+                                    <td class="px-6 py-4 text-xs font-mono max-w-xs truncate" :title="fsp['Member SID']">
+                                        {{{{ fsp['Member SID'] }}}}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="badge badge-info">{{{{ fsp['Account Type'] || 'Unknown' }}}}</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span v-if="fsp['Risk Level'] === 'CRITICAL'" class="badge badge-critical">CRITICAL</span>
+                                        <span v-else class="badge badge-high">HIGH</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- gMSA Vulnerabilities Section -->
+                <div id="gmsa-vulnerabilities-section" v-if="vulnerableGMSA.length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                        <i class="fas fa-user-cog text-yellow-600"></i> gMSA Misconfigurations ({{{{ vulnerableGMSA.length }}}})
+                    </h2>
+                    <div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 p-4 mb-6">
+                        <h3 class="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">🎯 Issue & Impact</h3>
+                        <p class="text-yellow-700 dark:text-yellow-300 text-sm mb-3">
+                            Group Managed Service Accounts (gMSA) are designed to provide automatic password management with 120-character passwords. However, misconfigured permissions allowing unauthorized retrieval of gMSA passwords can grant attackers access to service credentials and any systems/services using these accounts.
+                        </p>
+                        <h3 class="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">⚔️ Attacker Benefit</h3>
+                        <p class="text-yellow-700 dark:text-yellow-300 text-sm mb-3">
+                            Attackers who can retrieve gMSA passwords gain access to service accounts without needing to crack passwords. Over-permissioned gMSAs (readable by Domain Users or Everyone) allow any domain user to impersonate the service. If the gMSA has elevated privileges or delegation, attackers can escalate to Domain Admin.
+                        </p>
+                        <h3 class="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">🔓 Exploitation Method</h3>
+                        <p class="text-yellow-700 dark:text-yellow-300 text-sm mb-3">
+                            Tools: PowerView, ADModule (Get-ADServiceAccount), DSInternals. Attacker queries msDS-ManagedPassword attribute to retrieve current gMSA password. No cracking required - password is provided by AD. Attacker authenticates as gMSA account, inheriting all service permissions and delegations. Password theft is logged minimally compared to Kerberoasting.
+                        </p>
+                        <h3 class="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">💡 Remediation</h3>
+                        <p class="text-yellow-700 dark:text-yellow-300 text-sm">
+                            <strong>Restrict gMSA password retrieval:</strong> Configure PrincipalsAllowedToRetrieveManagedPassword to only include specific computer accounts that host the service. Remove broad groups like Domain Users, Authenticated Users, or Everyone. Review and restrict write permissions on gMSA objects. Monitor msDS-ManagedPassword attribute access. Ensure password rotation intervals are appropriate (default 30 days).
+                        </p>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                <tr>
+                                    <th @click="sortGMSAVuln('Name')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Name <i v-if="gmsaVulnSortColumn === 'Name'" :class="gmsaVulnSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                        Allowed To Retrieve
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                        Issues
+                                    </th>
+                                    <th @click="sortGMSAVuln('Password Age (days)')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Pwd Age <i v-if="gmsaVulnSortColumn === 'Password Age (days)'" :class="gmsaVulnSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                    <th @click="sortGMSAVuln('Risk Level')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        Risk <i v-if="gmsaVulnSortColumn === 'Risk Level'" :class="gmsaVulnSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="ml-1"></i>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                <tr v-for="gmsa in vulnerableGMSA" :key="gmsa.DN">
+                                    <td class="px-6 py-4 font-medium">{{{{ gmsa.Name }}}}</td>
+                                    <td class="px-6 py-4 text-sm max-w-xs truncate" :title="gmsa['Allowed To Retrieve']">
+                                        {{{{ gmsa['Allowed To Retrieve'] || 'N/A' }}}}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm max-w-xs truncate" :title="gmsa.Issues">
+                                        {{{{ gmsa.Issues }}}}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        {{{{ gmsa['Password Age (days)'] || 'N/A' }}}}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span v-if="gmsa['Risk Level'] === 'HIGH'" class="badge badge-high">HIGH</span>
+                                        <span v-else-if="gmsa['Risk Level'] === 'MEDIUM'" class="badge badge-medium">MEDIUM</span>
+                                        <span v-else class="badge badge-low">LOW</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <!-- Password Policy Analysis -->
                 <div id="password-policy-section" v-if="passwordPolicy.length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                     <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
@@ -2092,6 +2591,14 @@ class DashboardGenerator:
                     protectedGroupsCurrentPage: 1,
                     protectedGroupsPerPage: 50,
                     showProtectedGroupsType: 'users', // 'users', 'groups', 'all'
+                    delegationSortColumn: null,
+                    delegationSortDirection: 'asc',
+                    sidHistorySortColumn: null,
+                    sidHistorySortDirection: 'asc',
+                    foreignPrincipalsSortColumn: null,
+                    foreignPrincipalsSortDirection: 'asc',
+                    gmsaVulnSortColumn: null,
+                    gmsaVulnSortDirection: 'asc',
                     tabs: [
                         {{ id: 'overview', label: 'Overview', icon: 'fas fa-home', count: null }},
                         {{ id: 'findings', label: 'Security Findings', icon: 'fas fa-bug', count: null }},
@@ -2488,7 +2995,574 @@ class DashboardGenerator:
                     if (this.krbtgtOldPassword.length > 0) count++; // KRBTGT password rotation
                     if (this.protectedGroups.length > 0) count++; // Protected Groups & AdminSDHolder
                     if (this.machineAccountQuota > 0) count++; // Machine Account Quota
+                    if (this.unconstrainedDelegationAccounts.length > 0) count++; // Unconstrained Delegation
+                    if (this.constrainedDelegationRisks.length > 0) count++; // Constrained Delegation
+                    if (this.objectsWithSIDHistory.length > 0) count++; // SID History
+                    if (this.foreignSecurityPrincipals.length > 0) count++; // Foreign Security Principals
+                    if (this.vulnerableGMSA.length > 0) count++; // gMSA Misconfigurations
                     return count;
+                }},
+                
+                // 1. DELEGATION-BASED ATTACKS
+                unconstrainedDelegationAccounts() {{
+                    let accounts = [];
+                    
+                    // Helper to assess unconstrained delegation risk
+                    const assessUnconstrainedRisk = (enabled, adminCount, lastLogon, logonAgeDays) => {{
+                        const isEnabled = enabled === 'True' || enabled === 'TRUE';
+                        const isPrivileged = adminCount === '1';
+                        const logonAge = parseInt(logonAgeDays);
+                        const isActive = !isNaN(logonAge) && logonAge <= 90; // Active within 90 days
+                        
+                        // Disabled accounts are lower risk (but still need review)
+                        if (!isEnabled) {{
+                            return isPrivileged ? 'MEDIUM' : 'LOW';
+                        }}
+                        
+                        // Enabled + Privileged + Active = CRITICAL (high-value target, actively used)
+                        if (isEnabled && isPrivileged && isActive) {{
+                            return 'CRITICAL';
+                        }}
+                        
+                        // Enabled + (Privileged OR Active) = HIGH
+                        if (isEnabled && (isPrivileged || isActive)) {{
+                            return 'HIGH';
+                        }}
+                        
+                        // Enabled but dormant (not logged in recently) = MEDIUM
+                        return 'MEDIUM';
+                    }};
+                    
+                    // Users with unconstrained delegation
+                    const users = this.users.filter(u => 
+                        (u['Delegation Type'] === 'Unconstrained' || u['Delegation Type'] === 'unconstrained')
+                    ).map(u => ({{
+                        Type: 'User',
+                        Name: u.UserName || u.Name,
+                        DN: u.DistinguishedName,
+                        'Delegation Type': u['Delegation Type'],
+                        'Delegation Protocol': u['Delegation Protocol'],
+                        'Delegation Services': u['Delegation Services'],
+                        AdminCount: u.AdminCount,
+                        Enabled: u.Enabled,
+                        'Last Logon': u['Last Logon Date'],
+                        'Logon Age (days)': u['Logon Age (days)'],
+                        'Password Age (days)': u['Password Age (days)'],
+                        'Risk Level': assessUnconstrainedRisk(u.Enabled, u.AdminCount, u['Last Logon Date'], u['Logon Age (days)'])
+                    }}));
+                    
+                    // Computers with unconstrained delegation (excluding DCs)
+                    const computers = this.computers.filter(c => {{
+                        const isUnconstrainedDelegation = c['Delegation Type'] === 'Unconstrained' || c['Delegation Type'] === 'unconstrained';
+                        const isDC = c['Operating System'] && c['Operating System'].toLowerCase().includes('server') && 
+                                    (c.UserName || '').toUpperCase().includes('DC');
+                        return isUnconstrainedDelegation && !isDC;
+                    }}).map(c => ({{
+                        Type: 'Computer',
+                        Name: c.UserName || c.Name,
+                        DN: c['Distinguished Name'],
+                        'DNS Hostname': c['DNS Hostname'],
+                        'Operating System': c['Operating System'],
+                        'IPv4Address': c['IPv4Address'],
+                        'Delegation Type': c['Delegation Type'],
+                        'Delegation Protocol': c['Delegation Protocol'],
+                        'Delegation Services': c['Delegation Services'],
+                        AdminCount: c.AdminCount,
+                        Enabled: c.Enabled,
+                        'Last Logon': c['Last Logon Date'],
+                        'Logon Age (days)': c['Logon Age (days)'],
+                        'Password Age (days)': c['Password Age (days)'],
+                        'Risk Level': assessUnconstrainedRisk(c.Enabled, c.AdminCount, c['Last Logon Date'], c['Logon Age (days)'])
+                    }}));
+                    
+                    accounts = [...users, ...computers];
+                    
+                    // Apply sorting
+                    if (this.delegationSortColumn) {{
+                        const direction = this.delegationSortDirection === 'asc' ? 1 : -1;
+                        const column = this.delegationSortColumn;
+                        
+                        accounts.sort((a, b) => {{
+                            if (column === 'Risk Level') {{
+                                const riskPriority = {{ 'CRITICAL': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3 }};
+                                const aPriority = riskPriority[a[column]] ?? 999;
+                                const bPriority = riskPriority[b[column]] ?? 999;
+                                return (aPriority - bPriority) * direction;
+                            }}
+                            
+                            const aValue = (a[column] || '').toString().toLowerCase();
+                            const bValue = (b[column] || '').toString().toLowerCase();
+                            
+                            if (aValue < bValue) return -1 * direction;
+                            if (aValue > bValue) return 1 * direction;
+                            return 0;
+                        }});
+                    }}
+                    
+                    return accounts;
+                }},
+                
+                constrainedDelegationRisks() {{
+                    let accounts = [];
+                    
+                    // Helper function to assess risk level for delegation services
+                    const assessDelegationRisk = (services, protocol, adminCount, enabled, dnsHostname) => {{
+                        if (!services || services.trim() === '') return 'LOW';
+                        
+                        const servicesLower = services.toLowerCase();
+                        const isEnabled = enabled === 'True' || enabled === 'TRUE';
+                        const isPrivileged = adminCount === '1';
+                        
+                        // Protocol transition (Any protocol) is always CRITICAL when enabled
+                        if (protocol && protocol.toLowerCase() === 'any') {{
+                            return isEnabled ? 'CRITICAL' : 'MEDIUM';
+                        }}
+                        
+                        // "Any" services with constrained delegation is CRITICAL when enabled
+                        if (servicesLower === 'any') {{
+                            return isEnabled ? 'CRITICAL' : 'MEDIUM';
+                        }}
+                        
+                        // Check if targeting Domain Controllers (extremely high risk)
+                        const targetsDC = dnsHostname && (
+                            servicesLower.includes('/dc1.') ||
+                            servicesLower.includes('/dc2.') ||
+                            servicesLower.includes('/dc.') ||
+                            /\\/dc\\d+\\./.test(servicesLower)
+                        );
+                        
+                        // Common high-value service types for privilege escalation
+                        const criticalServices = [
+                            'ldap/',      // AD queries, modifications, DCSync
+                            'cifs/',      // File sharing, remote file access
+                            'host/'       // Multiple services including remote management
+                        ];
+                        
+                        const highRiskServices = [
+                            'mssql/',     // SQL Server (xp_cmdshell, database access)
+                            'wsman/',     // Windows Remote Management (PowerShell remoting)
+                            'winrm/',     // Windows Remote Management
+                            'termsrv/',   // Remote Desktop Services
+                            'http/',      // Web services (some AD services)
+                            'https/',     // Secure web services
+                            'rpcss/',     // RPC services
+                            'gc/'         // Global Catalog (AD queries)
+                        ];
+                        
+                        const mediumRiskServices = [
+                            'dns/',       // DNS services
+                            'ftp/',       // File transfer
+                            'eventlog/',  // Event log access
+                            'browser/',   // Computer browser service
+                            'netlogon/'   // Netlogon service
+                        ];
+                        
+                        const hasCriticalService = criticalServices.some(svc => servicesLower.includes(svc));
+                        const hasHighRiskService = highRiskServices.some(svc => servicesLower.includes(svc));
+                        const hasMediumRiskService = mediumRiskServices.some(svc => servicesLower.includes(svc));
+                        
+                        // Disabled accounts are lower risk
+                        if (!isEnabled) {{
+                            if (hasCriticalService || targetsDC) return 'MEDIUM';
+                            return 'LOW';
+                        }}
+                        
+                        // Critical services to DCs = CRITICAL
+                        if (targetsDC && hasCriticalService) {{
+                            return 'CRITICAL';
+                        }}
+                        
+                        // Critical services (LDAP/CIFS/HOST) + Enabled = HIGH or CRITICAL
+                        if (hasCriticalService) {{
+                            return isPrivileged ? 'CRITICAL' : 'HIGH';
+                        }}
+                        
+                        // High-risk services (MSSQL/WSMAN/TERMSRV) + Enabled = MEDIUM or HIGH
+                        if (hasHighRiskService) {{
+                            return isPrivileged ? 'HIGH' : 'MEDIUM';
+                        }}
+                        
+                        // Medium-risk services or other custom SPNs
+                        if (hasMediumRiskService) {{
+                            return 'MEDIUM';
+                        }}
+                        
+                        // Other constrained delegations (custom SPNs) - still require review
+                        return 'LOW';
+                    }};
+                    
+                    // Users with constrained delegation (all types)
+                    const users = this.users.filter(u => 
+                        u['Delegation Type'] === 'Constrained' || u['Delegation Type'] === 'constrained'
+                    ).map(u => {{
+                        const riskLevel = assessDelegationRisk(u['Delegation Services'], u['Delegation Protocol'], u.AdminCount, u.Enabled, null);
+                        return {{
+                            Type: 'User',
+                            Name: u.UserName || u.Name,
+                            DN: u.DistinguishedName,
+                            'Delegation Services': u['Delegation Services'] || 'N/A',
+                            'Delegation Protocol': u['Delegation Protocol'] || 'Kerberos',
+                            AdminCount: u.AdminCount,
+                            Enabled: u.Enabled,
+                            'Password Age (days)': u['Password Age (days)'],
+                            'Last Logon': u['Last Logon Date'],
+                            'Risk Level': riskLevel
+                        }};
+                    }});
+                    
+                    // Computers with constrained delegation (all types)
+                    const computers = this.computers.filter(c => 
+                        c['Delegation Type'] === 'Constrained' || c['Delegation Type'] === 'constrained'
+                    ).map(c => {{
+                        const riskLevel = assessDelegationRisk(c['Delegation Services'], c['Delegation Protocol'], c.AdminCount, c.Enabled, c['Delegation Services']);
+                        return {{
+                            Type: 'Computer',
+                            Name: c.UserName || c.Name,
+                            DN: c['Distinguished Name'],
+                            'DNS Hostname': c['DNS Hostname'],
+                            'Operating System': c['Operating System'],
+                            'IPv4Address': c['IPv4Address'],
+                            'Delegation Services': c['Delegation Services'] || 'N/A',
+                            'Delegation Protocol': c['Delegation Protocol'] || 'Kerberos',
+                            AdminCount: c.AdminCount,
+                            Enabled: c.Enabled,
+                            'Password Age (days)': c['Password Age (days)'],
+                            'Last Logon': c['Last Logon Date'],
+                            'Risk Level': riskLevel
+                        }};
+                    }});
+                    
+                    accounts = [...users, ...computers];
+                    
+                    // Apply sorting
+                    if (this.delegationSortColumn) {{
+                        const direction = this.delegationSortDirection === 'asc' ? 1 : -1;
+                        const column = this.delegationSortColumn;
+                        
+                        accounts.sort((a, b) => {{
+                            if (column === 'Risk Level') {{
+                                const riskPriority = {{ 'CRITICAL': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3 }};
+                                const aPriority = riskPriority[a[column]] ?? 999;
+                                const bPriority = riskPriority[b[column]] ?? 999;
+                                return (aPriority - bPriority) * direction;
+                            }}
+                            
+                            const aValue = (a[column] || '').toString().toLowerCase();
+                            const bValue = (b[column] || '').toString().toLowerCase();
+                            
+                            if (aValue < bValue) return -1 * direction;
+                            if (aValue > bValue) return 1 * direction;
+                            return 0;
+                        }});
+                    }}
+                    
+                    return accounts;
+                }},
+                
+                userCreatedComputers() {{
+                    // Computers with ms-ds-CreatorSid (RBCD opportunity)
+                    return this.computers.filter(c => 
+                        c['ms-ds-CreatorSid'] && c['ms-ds-CreatorSid'].trim() !== ''
+                    );
+                }},
+                
+                // 2. SID HISTORY ABUSE
+                objectsWithSIDHistory() {{
+                    let objects = [];
+                    
+                    // Helper to extract domain from SID
+                    const extractDomainSID = (sid) => {{
+                        if (!sid || sid.trim() === '') return null;
+                        const parts = sid.split('-');
+                        if (parts.length >= 4) {{
+                            return parts.slice(0, -1).join('-'); // Remove RID
+                        }}
+                        return sid;
+                    }};
+                    
+                    // Helper to check if SID is privileged (RID 500-519)
+                    const isPrivilegedSID = (sidHistory) => {{
+                        if (!sidHistory) return false;
+                        const ridMatch = sidHistory.match(/-([0-9]+)$/);
+                        if (ridMatch) {{
+                            const rid = parseInt(ridMatch[1]);
+                            return rid >= 500 && rid <= 519;
+                        }}
+                        return false;
+                    }};
+                    
+                    // Get current domain SID
+                    let currentDomainSID = null;
+                    if (this.users.length > 0) {{
+                        currentDomainSID = extractDomainSID(this.users[0].SID);
+                    }}
+                    
+                    // Users with SIDHistory
+                    const users = this.users.filter(u => 
+                        u.SIDHistory && u.SIDHistory.trim() !== ''
+                    ).map(u => {{
+                        const sidHistoryDomain = extractDomainSID(u.SIDHistory);
+                        const isForeign = currentDomainSID && sidHistoryDomain !== currentDomainSID;
+                        const isPrivileged = isPrivilegedSID(u.SIDHistory);
+                        
+                        let riskLevel = 'MEDIUM';
+                        if (isPrivileged && isForeign) riskLevel = 'CRITICAL';
+                        else if (isPrivileged || isForeign) riskLevel = 'HIGH';
+                        
+                        return {{
+                            Type: 'User',
+                            Name: u.UserName || u.Name,
+                            DN: u.DistinguishedName,
+                            SID: u.SID,
+                            SIDHistory: u.SIDHistory,
+                            AdminCount: u.AdminCount,
+                            Enabled: u.Enabled,
+                            'Foreign Domain': isForeign ? 'Yes' : 'No',
+                            'Privileged SID': isPrivileged ? 'Yes' : 'No',
+                            'Risk Level': riskLevel
+                        }};
+                    }});
+                    
+                    // Computers with SIDHistory
+                    const computers = this.computers.filter(c => 
+                        c.SIDHistory && c.SIDHistory.trim() !== ''
+                    ).map(c => {{
+                        const sidHistoryDomain = extractDomainSID(c.SIDHistory);
+                        const isForeign = currentDomainSID && sidHistoryDomain !== currentDomainSID;
+                        
+                        return {{
+                            Type: 'Computer',
+                            Name: c.UserName || c.Name,
+                            DN: c['Distinguished Name'],
+                            SID: c.SID,
+                            SIDHistory: c.SIDHistory,
+                            'Operating System': c['Operating System'],
+                            Enabled: c.Enabled,
+                            'Foreign Domain': isForeign ? 'Yes' : 'No',
+                            'Privileged SID': 'N/A',
+                            'Risk Level': isForeign ? 'HIGH' : 'MEDIUM'
+                        }};
+                    }});
+                    
+                    // Groups with SIDHistory
+                    const groups = this.groups.filter(g => 
+                        g.SIDHistory && g.SIDHistory.trim() !== ''
+                    ).map(g => {{
+                        const sidHistoryDomain = extractDomainSID(g.SIDHistory);
+                        const isForeign = currentDomainSID && sidHistoryDomain !== currentDomainSID;
+                        const isPrivileged = g.AdminCount === '1';
+                        
+                        let riskLevel = 'MEDIUM';
+                        if (isPrivileged && isForeign) riskLevel = 'CRITICAL';
+                        else if (isPrivileged || isForeign) riskLevel = 'HIGH';
+                        
+                        return {{
+                            Type: 'Group',
+                            Name: g.Name,
+                            DN: g.DistinguishedName,
+                            SID: g.SID,
+                            SIDHistory: g.SIDHistory,
+                            AdminCount: g.AdminCount,
+                            'Foreign Domain': isForeign ? 'Yes' : 'No',
+                            'Privileged SID': isPrivileged ? 'Yes' : 'No',
+                            'Risk Level': riskLevel
+                        }};
+                    }});
+                    
+                    objects = [...users, ...computers, ...groups];
+                    
+                    // Apply sorting
+                    if (this.sidHistorySortColumn) {{
+                        const direction = this.sidHistorySortDirection === 'asc' ? 1 : -1;
+                        const column = this.sidHistorySortColumn;
+                        
+                        objects.sort((a, b) => {{
+                            if (column === 'Risk Level') {{
+                                const riskPriority = {{ 'CRITICAL': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3 }};
+                                const aPriority = riskPriority[a[column]] ?? 999;
+                                const bPriority = riskPriority[b[column]] ?? 999;
+                                return (aPriority - bPriority) * direction;
+                            }}
+                            
+                            const aValue = (a[column] || '').toString().toLowerCase();
+                            const bValue = (b[column] || '').toString().toLowerCase();
+                            
+                            if (aValue < bValue) return -1 * direction;
+                            if (aValue > bValue) return 1 * direction;
+                            return 0;
+                        }});
+                    }}
+                    
+                    return objects;
+                }},
+                
+                // 3. PRIVILEGED GROUP MEMBERSHIP ANALYSIS
+                foreignSecurityPrincipals() {{
+                    let foreignPrincipals = [];
+                    
+                    // Get current domain SID
+                    let currentDomainSID = null;
+                    if (this.users.length > 0) {{
+                        const firstUserSID = this.users[0].SID;
+                        if (firstUserSID) {{
+                            const parts = firstUserSID.split('-');
+                            if (parts.length >= 4) {{
+                                currentDomainSID = parts.slice(0, -1).join('-');
+                            }}
+                        }}
+                    }}
+                    
+                    if (!currentDomainSID) return [];
+                    
+                    // Check privileged groups
+                    const privilegedGroups = ['Administrators', 'Domain Admins', 'Enterprise Admins', 
+                                             'Schema Admins', 'Account Operators', 'Backup Operators',
+                                             'Server Operators', 'Print Operators', 'DnsAdmins'];
+                    
+                    privilegedGroups.forEach(groupName => {{
+                        const memberships = this.groupMembers.filter(gm => 
+                            gm['Group Name'] === groupName
+                        );
+                        
+                        memberships.forEach(member => {{
+                            const memberSID = member['Member SID'];
+                            // Check if SID is foreign: either from different domain or marked as ForeignSecurityPrincipal
+                            const isForeignSID = memberSID && 
+                                                 (memberSID.startsWith('ForeignSecurityPrincipal:') || 
+                                                  (!memberSID.startsWith(currentDomainSID) && memberSID.startsWith('S-1-5-21-')));
+                            
+                            if (isForeignSID) {{
+                                foreignPrincipals.push({{
+                                    'Group Name': groupName,
+                                    'Member Name': member['Member Name'] || member['Member UserName'],
+                                    'Member SID': memberSID,
+                                    'Account Type': member.AccountType,
+                                    'Risk Level': groupName.includes('Admin') ? 'CRITICAL' : 'HIGH'
+                                }});
+                            }}
+                        }});
+                    }});
+                    
+                    // Apply sorting
+                    if (this.foreignPrincipalsSortColumn) {{
+                        const direction = this.foreignPrincipalsSortDirection === 'asc' ? 1 : -1;
+                        const column = this.foreignPrincipalsSortColumn;
+                        
+                        foreignPrincipals.sort((a, b) => {{
+                            if (column === 'Risk Level') {{
+                                const riskPriority = {{ 'CRITICAL': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3 }};
+                                const aPriority = riskPriority[a[column]] ?? 999;
+                                const bPriority = riskPriority[b[column]] ?? 999;
+                                return (aPriority - bPriority) * direction;
+                            }}
+                            
+                            const aValue = (a[column] || '').toString().toLowerCase();
+                            const bValue = (b[column] || '').toString().toLowerCase();
+                            
+                            if (aValue < bValue) return -1 * direction;
+                            if (aValue > bValue) return 1 * direction;
+                            return 0;
+                        }});
+                    }}
+                    
+                    return foreignPrincipals;
+                }},
+                
+                emptyPrivilegedGroups() {{
+                    const privilegedGroups = this.groups.filter(g => g.AdminCount === '1');
+                    
+                    return privilegedGroups.filter(group => {{
+                        const hasMembers = this.groupMembers.some(gm => 
+                            gm['Group Name'] === group.Name
+                        );
+                        return !hasMembers;
+                    }});
+                }},
+                
+                // 4. SERVICE ACCOUNT VULNERABILITIES
+                vulnerableGMSA() {{
+                    let vulnerable = [];
+                    
+                    this.gmsa.forEach(gmsaAccount => {{
+                        const issues = [];
+                        let riskLevel = 'LOW';
+                        
+                        // Check for excessive read permissions
+                        const allowedToRetrieve = gmsaAccount['Allowed To Retrieve Password'] || '';
+                        if (allowedToRetrieve.toLowerCase().includes('domain users') || 
+                            allowedToRetrieve.toLowerCase().includes('everyone') ||
+                            allowedToRetrieve.toLowerCase().includes('authenticated users')) {{
+                            issues.push('Excessive retrieval permissions');
+                            riskLevel = 'HIGH';
+                        }}
+                        
+                        // Check for excessive write permissions
+                        const writePerms = gmsaAccount['Write Permissions'] || '';
+                        if (writePerms.toLowerCase().includes('domain users') || 
+                            writePerms.toLowerCase().includes('everyone')) {{
+                            issues.push('Excessive write permissions');
+                            riskLevel = 'HIGH';
+                        }}
+                        
+                        // Check for stale password rotation
+                        const pwdAge = parseInt(gmsaAccount['Password Age (days)']);
+                        const rotationInterval = parseInt(gmsaAccount['Password Rotation Interval (days)']);
+                        if (!isNaN(pwdAge) && !isNaN(rotationInterval) && pwdAge > (rotationInterval + 5)) {{
+                            issues.push('Password rotation delayed');
+                            if (riskLevel === 'LOW') riskLevel = 'MEDIUM';
+                        }}
+                        
+                        // Check if gMSA has delegation configured
+                        const delegationServices = gmsaAccount['Delegation Services'] || '';
+                        if (delegationServices && delegationServices.trim() !== '') {{
+                            issues.push('Has delegation configured');
+                            if (riskLevel === 'LOW') riskLevel = 'MEDIUM';
+                        }}
+                        
+                        if (issues.length > 0) {{
+                            vulnerable.push({{
+                                Name: gmsaAccount['SAM Account Name'] || gmsaAccount.Name,
+                                DN: gmsaAccount['Distinguished Name'],
+                                'Allowed To Retrieve': allowedToRetrieve,
+                                'Write Permissions': writePerms,
+                                'Password Age (days)': gmsaAccount['Password Age (days)'],
+                                'Rotation Interval (days)': gmsaAccount['Password Rotation Interval (days)'],
+                                'Delegation Services': delegationServices,
+                                Issues: issues.join('; '),
+                                'Risk Level': riskLevel
+                            }});
+                        }}
+                    }});
+                    
+                    // Apply sorting
+                    if (this.gmsaVulnSortColumn) {{
+                        const direction = this.gmsaVulnSortDirection === 'asc' ? 1 : -1;
+                        const column = this.gmsaVulnSortColumn;
+                        
+                        vulnerable.sort((a, b) => {{
+                            if (column === 'Risk Level') {{
+                                const riskPriority = {{ 'CRITICAL': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3 }};
+                                const aPriority = riskPriority[a[column]] ?? 999;
+                                const bPriority = riskPriority[b[column]] ?? 999;
+                                return (aPriority - bPriority) * direction;
+                            }}
+                            
+                            if (column === 'Password Age (days)' || column === 'Rotation Interval (days)') {{
+                                const aValue = parseInt(a[column]) || 0;
+                                const bValue = parseInt(b[column]) || 0;
+                                return (aValue - bValue) * direction;
+                            }}
+                            
+                            const aValue = (a[column] || '').toString().toLowerCase();
+                            const bValue = (b[column] || '').toString().toLowerCase();
+                            
+                            if (aValue < bValue) return -1 * direction;
+                            if (aValue > bValue) return 1 * direction;
+                            return 0;
+                        }});
+                    }}
+                    
+                    return vulnerable;
                 }},
                 
                 criticalFindings() {{
@@ -3109,6 +4183,42 @@ class DashboardGenerator:
                 protectedGroupsGoToPage(page) {{
                     if (page >= 1 && page <= this.protectedGroupsTotalPages) {{
                         this.protectedGroupsCurrentPage = page;
+                    }}
+                }},
+                
+                sortDelegation(column) {{
+                    if (this.delegationSortColumn === column) {{
+                        this.delegationSortDirection = this.delegationSortDirection === 'asc' ? 'desc' : 'asc';
+                    }} else {{
+                        this.delegationSortColumn = column;
+                        this.delegationSortDirection = 'asc';
+                    }}
+                }},
+                
+                sortSIDHistory(column) {{
+                    if (this.sidHistorySortColumn === column) {{
+                        this.sidHistorySortDirection = this.sidHistorySortDirection === 'asc' ? 'desc' : 'asc';
+                    }} else {{
+                        this.sidHistorySortColumn = column;
+                        this.sidHistorySortDirection = 'asc';
+                    }}
+                }},
+                
+                sortForeignPrincipals(column) {{
+                    if (this.foreignPrincipalsSortColumn === column) {{
+                        this.foreignPrincipalsSortDirection = this.foreignPrincipalsSortDirection === 'asc' ? 'desc' : 'asc';
+                    }} else {{
+                        this.foreignPrincipalsSortColumn = column;
+                        this.foreignPrincipalsSortDirection = 'asc';
+                    }}
+                }},
+                
+                sortGMSAVuln(column) {{
+                    if (this.gmsaVulnSortColumn === column) {{
+                        this.gmsaVulnSortDirection = this.gmsaVulnSortDirection === 'asc' ? 'desc' : 'asc';
+                    }} else {{
+                        this.gmsaVulnSortColumn = column;
+                        this.gmsaVulnSortDirection = 'asc';
                     }}
                 }},
                 
