@@ -1,3 +1,10 @@
+## [0.13.2](https://github.com/l4rm4nd/PyADRecon/compare/v0.13.1...v0.13.2) (2026-02-22)
+
+
+### Bug Fixes
+
+* rework Foreign Security Principals in Privileged Groups ([50fe76e](https://github.com/l4rm4nd/PyADRecon/commit/50fe76e8674a79a84678947fde3d488a73e2f383))
+
 ## [0.13.1](https://github.com/l4rm4nd/PyADRecon/compare/v0.13.0...v0.13.1) (2026-02-22)
 
 
@@ -25,11 +32,4 @@
 ### Bug Fixes
 
 * rework protected users in dashboard ([b07d6e6](https://github.com/l4rm4nd/PyADRecon/commit/b07d6e6e88c3ad7503a41e2fbfd83231ee9016be))
-
-## [0.12.12](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.11...v0.12.12) (2026-02-21)
-
-
-### Bug Fixes
-
-* add --generate-dashboard-from support ([e4905ce](https://github.com/l4rm4nd/PyADRecon/commit/e4905ce55616ea13e480f9c3c299542f07c3d312))
 
