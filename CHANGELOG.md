@@ -1,3 +1,10 @@
+## [0.13.0](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.14...v0.13.0) (2026-02-22)
+
+
+### Features
+
+* paginated dashboard ([1ec081f](https://github.com/l4rm4nd/PyADRecon/commit/1ec081f906436060cede2ebed94854708e2a954c))
+
 ## [0.12.14](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.13...v0.12.14) (2026-02-22)
 
 
@@ -25,11 +32,4 @@
 ### Bug Fixes
 
 * update footer ([a60f604](https://github.com/l4rm4nd/PyADRecon/commit/a60f604a82ea0c5f0c8b7889c0a87af901256d75))
-
-## [0.12.10](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.9...v0.12.10) (2026-02-21)
-
-
-### Bug Fixes
-
-* make dashboard more mobile friendly ([75d0609](https://github.com/l4rm4nd/PyADRecon/commit/75d060947d8101958e3e1d93017415c0a941c51a))
 
