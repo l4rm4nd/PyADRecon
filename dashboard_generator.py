@@ -1973,19 +1973,19 @@ class DashboardGenerator:
                     <div class="bg-pink-50 dark:bg-pink-900/20 border-l-4 border-pink-500 p-4 mb-6">
                         <h3 class="font-semibold text-pink-800 dark:text-pink-200 mb-2">🎯 Issue & Impact</h3>
                         <p class="text-pink-700 dark:text-pink-300 text-sm mb-3">
-                            Foreign Security Principals (FSPs) represent accounts from external trusted domains. When present in privileged groups like Domain Admins, they create cross-domain privilege escalation paths. Compromise of the external domain can lead to compromise of the local domain.
+                            Foreign Security Principals (FSPs) represent accounts from external trusted domains. When present in privileged groups, they create cross-domain privilege escalation paths. Compromise of the trusted domain leads to compromise of the trusting domain through FSP memberships. Even parent-child domain trusts carry risk: if the forest root is compromised, all child domains are compromised.
                         </p>
                         <h3 class="font-semibold text-pink-800 dark:text-pink-200 mb-2">⚔️ Attacker Benefit</h3>
                         <p class="text-pink-700 dark:text-pink-300 text-sm mb-3">
-                            Attackers who compromise the trusted domain can leverage FSP memberships to gain privileged access in the trusting domain. This enables lateral movement across domain boundaries and can bypass security controls that only monitor local domain accounts. Foreign admin accounts are often overlooked in security audits.
+                            Attackers who compromise any trusted domain can leverage FSP memberships to gain privileged access in the trusting domain. This enables lateral movement across domain boundaries and forest-wide privilege escalation. Foreign admin accounts are often overlooked in security audits. CRITICAL findings indicate external domain access; HIGH indicates unexpected cross-domain access; MEDIUM indicates architectural forest trusts that still represent real risk.
                         </p>
                         <h3 class="font-semibold text-pink-800 dark:text-pink-200 mb-2">🔓 Exploitation Method</h3>
                         <p class="text-pink-700 dark:text-pink-300 text-sm mb-3">
-                            Tools: BloodHound, PowerView, ADExplorer. Attackers use domain trust relationships to authenticate as foreign principals. Once authenticated, they inherit all group memberships including privileged groups. Common in forest trusts where Enterprise Admins have cross-domain access. FSPs can be used for persistence if trust is later broken.
+                            Tools: BloodHound, PowerView, ADExplorer. Attackers use domain trust relationships to authenticate as foreign principals. Once authenticated, they inherit all group memberships including privileged groups. Parent domain compromise is particularly dangerous as it provides forest-wide administrative access. FSPs can be used for persistence even if trust is later broken.
                         </p>
                         <h3 class="font-semibold text-pink-800 dark:text-pink-200 mb-2">💡 Remediation</h3>
                         <p class="text-pink-700 dark:text-pink-300 text-sm">
-                            <strong>Review and remove unnecessary FSPs:</strong> Remove foreign accounts from privileged groups unless absolutely required for business operations. Implement least-privilege access across trust boundaries. Enable SID filtering on external trusts to block foreign administrative SIDs. Use selective authentication on forest trusts. Regularly audit group memberships for foreign SIDs. Document and justify all cross-domain privileged access.
+                            <strong>Prioritize by risk level:</strong> Address CRITICAL (external domains) and HIGH (unexpected cross-domain access) immediately. For MEDIUM findings (parent domain trusts), document and monitor, ensure forest root domain has strong security controls. Enable SID filtering on all external trusts. Use selective authentication on forest trusts. Implement tiered administration model. Regularly audit group memberships for foreign SIDs.
                         </p>
                     </div>
                     <div class="overflow-x-auto">
@@ -2021,7 +2021,9 @@ class DashboardGenerator:
                                     </td>
                                     <td class="px-6 py-4">
                                         <span v-if="fsp['Risk Level'] === 'CRITICAL'" class="badge badge-critical">CRITICAL</span>
-                                        <span v-else class="badge badge-high">HIGH</span>
+                                        <span v-else-if="fsp['Risk Level'] === 'HIGH'" class="badge badge-high">HIGH</span>
+                                        <span v-else-if="fsp['Risk Level'] === 'MEDIUM'" class="badge badge-medium">MEDIUM</span>
+                                        <span v-else class="badge badge-low">LOW</span>
                                     </td>
                                 </tr>
                             </tbody>
@@ -3400,8 +3402,11 @@ class DashboardGenerator:
                 foreignSecurityPrincipals() {{
                     let foreignPrincipals = [];
                     
-                    // Get current domain SID
+                    // Get current domain SID and name
                     let currentDomainSID = null;
+                    let currentDomainName = null;
+                    let forestRootDomain = null;
+                    
                     if (this.users.length > 0) {{
                         const firstUserSID = this.users[0].SID;
                         if (firstUserSID) {{
@@ -3409,6 +3414,22 @@ class DashboardGenerator:
                             if (parts.length >= 4) {{
                                 currentDomainSID = parts.slice(0, -1).join('-');
                             }}
+                        }}
+                    }}
+                    
+                    // Get current domain name
+                    if (this.domain.length > 0) {{
+                        const domainEntry = this.domain.find(d => d.Category === 'Name');
+                        if (domainEntry) {{
+                            currentDomainName = domainEntry.Value.toLowerCase();
+                        }}
+                    }}
+                    
+                    // Get forest root domain name
+                    if (this.forest.length > 0) {{
+                        const forestEntry = this.forest.find(f => f.Category === 'Name');
+                        if (forestEntry) {{
+                            forestRootDomain = forestEntry.Value.toLowerCase();
                         }}
                     }}
                     
@@ -3432,12 +3453,33 @@ class DashboardGenerator:
                                                   (!memberSID.startsWith(currentDomainSID) && memberSID.startsWith('S-1-5-21-')));
                             
                             if (isForeignSID) {{
+                                // Extract foreign domain name
+                                let foreignDomain = null;
+                                if (memberSID.startsWith('ForeignSecurityPrincipal:')) {{
+                                    foreignDomain = memberSID.replace('ForeignSecurityPrincipal:', '').toLowerCase();
+                                }}
+                                
+                                // Determine risk level based on domain trust and privileges
+                                let riskLevel;
+                                const memberName = member['Member Name'] || member['Member UserName'];
+                                const isFromForestRoot = foreignDomain && forestRootDomain && foreignDomain === forestRootDomain;
+                                
+                                // Risk assessment:
+                                // - Parent domain (forest root): MEDIUM - architectural by design, but parent compromise = child compromise
+                                // - External domain with admin group: CRITICAL - unexpected cross-domain privileged access
+                                // - External domain with non-admin group: HIGH - unexpected cross-domain access
+                                if (isFromForestRoot) {{
+                                    riskLevel = 'MEDIUM';  // Trust-based risk: parent domain compromise affects child
+                                }} else {{
+                                    riskLevel = groupName.includes('Admin') ? 'CRITICAL' : 'HIGH';  // External domain = critical issue
+                                }}
+                                
                                 foreignPrincipals.push({{
                                     'Group Name': groupName,
-                                    'Member Name': member['Member Name'] || member['Member UserName'],
+                                    'Member Name': memberName,
                                     'Member SID': memberSID,
                                     'Account Type': member.AccountType,
-                                    'Risk Level': groupName.includes('Admin') ? 'CRITICAL' : 'HIGH'
+                                    'Risk Level': riskLevel
                                 }});
                             }}
                         }});
