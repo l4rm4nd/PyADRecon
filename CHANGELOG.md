@@ -1,3 +1,10 @@
+## [0.12.13](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.12...v0.12.13) (2026-02-22)
+
+
+### Bug Fixes
+
+* rework protected users in dashboard ([b07d6e6](https://github.com/l4rm4nd/PyADRecon/commit/b07d6e6e88c3ad7503a41e2fbfd83231ee9016be))
+
 ## [0.12.12](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.11...v0.12.12) (2026-02-21)
 
 
@@ -25,11 +32,4 @@
 ### Bug Fixes
 
 * refactor ESC9 detection ([9a58455](https://github.com/l4rm4nd/PyADRecon/commit/9a584559bbf4fac26e71264b2c4126af6fee6670))
-
-## [0.12.8](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.7...v0.12.8) (2026-02-21)
-
-
-### Bug Fixes
-
-* add manager approval to dashboard ([1716844](https://github.com/l4rm4nd/PyADRecon/commit/17168444a95083828ddcf8e605f398f345562f9a))
 
