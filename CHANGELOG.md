@@ -1,3 +1,10 @@
+## [0.12.14](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.13...v0.12.14) (2026-02-22)
+
+
+### Bug Fixes
+
+* rename finding ([453536a](https://github.com/l4rm4nd/PyADRecon/commit/453536a5bf760db7ae28a759c5e11a77ee1adb1e))
+
 ## [0.12.13](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.12...v0.12.13) (2026-02-22)
 
 
@@ -25,11 +32,4 @@
 ### Bug Fixes
 
 * make dashboard more mobile friendly ([75d0609](https://github.com/l4rm4nd/PyADRecon/commit/75d060947d8101958e3e1d93017415c0a941c51a))
-
-## [0.12.9](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.8...v0.12.9) (2026-02-21)
-
-
-### Bug Fixes
-
-* refactor ESC9 detection ([9a58455](https://github.com/l4rm4nd/PyADRecon/commit/9a584559bbf4fac26e71264b2c4126af6fee6670))
 
