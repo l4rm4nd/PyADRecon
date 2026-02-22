@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 """
 PyADRecon - Python Active Directory Reconnaissance Tool
@@ -2249,6 +2250,7 @@ class PyADRecon:
                     member_username = ""
                     member_sid = ""
                     account_type = ""
+                    is_foreign_principal = False
                     
                     try:
                         # Look up the member object to get its details
@@ -2278,9 +2280,49 @@ class PyADRecon:
                                 account_type = "group"
                             else:
                                 account_type = "unknown"
-                    except Exception:
-                        # If lookup fails, try to guess from DN
+                        else:
+                            # Empty results - likely a referral to another domain
+                            member_dn_str = str(member_dn)
+                            
+                            # Check if this is a cross-domain member (different DC components)
+                            # Extract DC components from member DN
+                            member_dc_parts = re.findall(r'DC=([^,]+)', member_dn_str, re.IGNORECASE)
+                            base_dc_parts = re.findall(r'DC=([^,]+)', self.base_dn, re.IGNORECASE)
+                            
+                            # If member has different DC components, it's from another domain
+                            if member_dc_parts and member_dc_parts != base_dc_parts:
+                                is_foreign_principal = True
+                                member_domain = '.'.join(member_dc_parts)
+                                # Mark as foreign principal by including domain info in SID field
+                                member_sid = f"ForeignSecurityPrincipal:{member_domain}"
+                                logger.debug(f"Detected foreign principal: {member_name} from domain {member_domain}")
+                            
+                            # Guess account type from DN
+                            if ',CN=Users,' in member_dn_str or ',OU=Users,' in member_dn_str:
+                                account_type = "user"
+                            elif ',CN=Computers,' in member_dn_str or ',OU=Computers,' in member_dn_str:
+                                account_type = "computer"
+                            elif ',CN=Builtin,' in member_dn_str or 'CN=Groups' in member_dn_str:
+                                account_type = "group"
+                            else:
+                                account_type = "foreignSecurityPrincipal" if is_foreign_principal else "unknown"
+                                
+                    except Exception as e:
+                        logger.debug(f"Error querying member {member_dn}: {e}")
+                        # If lookup fails, try to detect cross-domain member from DN
                         member_dn_str = str(member_dn)
+                        
+                        # Check if this is a cross-domain member
+                        member_dc_parts = re.findall(r'DC=([^,]+)', member_dn_str, re.IGNORECASE)
+                        base_dc_parts = re.findall(r'DC=([^,]+)', self.base_dn, re.IGNORECASE)
+                        
+                        if member_dc_parts and member_dc_parts != base_dc_parts:
+                            is_foreign_principal = True
+                            member_domain = '.'.join(member_dc_parts)
+                            member_sid = f"ForeignSecurityPrincipal:{member_domain}"
+                            logger.debug(f"Detected foreign principal (exception path): {member_name} from domain {member_domain}")
+                        
+                        # Guess account type from DN
                         if ',CN=Users,' in member_dn_str or ',OU=Users,' in member_dn_str:
                             account_type = "user"
                         elif ',CN=Computers,' in member_dn_str or ',OU=Computers,' in member_dn_str:
@@ -2288,7 +2330,7 @@ class PyADRecon:
                         elif ',CN=Builtin,' in member_dn_str or 'CN=Groups' in member_dn_str:
                             account_type = "group"
                         else:
-                            account_type = "unknown"
+                            account_type = "foreignSecurityPrincipal" if is_foreign_principal else "unknown"
 
                     results.append({
                         "Group Name": group_name,
