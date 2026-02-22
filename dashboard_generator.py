@@ -1323,7 +1323,7 @@ class DashboardGenerator:
                 <!-- Protected Groups & AdminSDHolder -->
                 <div id="protected-users-section" v-if="protectedGroups.length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                     <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                        <i class="fas fa-shield-alt text-teal-600"></i> Tier-0 User Accounts - Protected Users Audit ({{{{ unprotectedPrivilegedUsers.length }}}})
+                        <i class="fas fa-shield-alt text-teal-600"></i> Not in Protected Users Group ({{{{ unprotectedPrivilegedUsers.length }}}})
                     </h2>
                     
                     <div class="bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-500 p-4 mb-6">
