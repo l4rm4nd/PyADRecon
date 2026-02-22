@@ -1,3 +1,10 @@
+## [0.13.3](https://github.com/l4rm4nd/PyADRecon/compare/v0.13.2...v0.13.3) (2026-02-22)
+
+
+### Bug Fixes
+
+* add EOL systemd detection ([81bdb7f](https://github.com/l4rm4nd/PyADRecon/commit/81bdb7f516a3023af08b7cab2be3b6242d68c174))
+
 ## [0.13.2](https://github.com/l4rm4nd/PyADRecon/compare/v0.13.1...v0.13.2) (2026-02-22)
 
 
@@ -25,11 +32,4 @@
 ### Bug Fixes
 
 * rename finding ([453536a](https://github.com/l4rm4nd/PyADRecon/commit/453536a5bf760db7ae28a759c5e11a77ee1adb1e))
-
-## [0.12.13](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.12...v0.12.13) (2026-02-22)
-
-
-### Bug Fixes
-
-* rework protected users in dashboard ([b07d6e6](https://github.com/l4rm4nd/PyADRecon/commit/b07d6e6e88c3ad7503a41e2fbfd83231ee9016be))
 
