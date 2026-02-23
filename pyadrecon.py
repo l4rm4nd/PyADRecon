@@ -4866,19 +4866,6 @@ class PyADRecon:
         self.results['ProtectedGroups'] = results
         logger.info(f"    Found {total_count} AdminSDHolder objects ({total_users} users, {total_count - total_users} groups)")
         
-        if high_risk_count > 0:
-            logger.warning(f"    🚨 CRITICAL: {high_risk_count} Tier-0 privileged user(s) NOT in 'Protected Users' group - IMMEDIATE ACTION REQUIRED")
-            logger.warning(f"    ⚠ These are high-value targets vulnerable to credential theft attacks")
-        
-        if medium_risk_count > 0:
-            logger.warning(f"    ⚠ {medium_risk_count} account(s) with MEDIUM risk - Review recommendations for Protected Users group membership")
-        
-        if users_in_protected_users > 0:
-            logger.info(f"    ✓ {users_in_protected_users} user(s) properly secured in 'Protected Users' group")
-        
-        if high_risk_count == 0 and total_users > 0:
-            logger.info(f"    ✓ All Tier-0 privileged users are properly protected")
-        
         return results
 
     def collect_krbtgt(self) -> List[Dict]:
