@@ -1,3 +1,10 @@
+## [0.13.4](https://github.com/l4rm4nd/PyADRecon/compare/v0.13.3...v0.13.4) (2026-06-30)
+
+
+### Bug Fixes
+
+* bump impacket ([023b941](https://github.com/l4rm4nd/PyADRecon/commit/023b9415c434a224638fa451e8404c7833148803))
+
 ## [0.13.3](https://github.com/l4rm4nd/PyADRecon/compare/v0.13.2...v0.13.3) (2026-02-22)
 
 
@@ -25,11 +32,4 @@
 ### Features
 
 * paginated dashboard ([1ec081f](https://github.com/l4rm4nd/PyADRecon/commit/1ec081f906436060cede2ebed94854708e2a954c))
-
-## [0.12.14](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.13...v0.12.14) (2026-02-22)
-
-
-### Bug Fixes
-
-* rename finding ([453536a](https://github.com/l4rm4nd/PyADRecon/commit/453536a5bf760db7ae28a759c5e11a77ee1adb1e))
 
