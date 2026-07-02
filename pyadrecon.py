@@ -104,7 +104,7 @@ if not KERBEROS_AVAILABLE:
 
 
 # Constants
-VERSION = "v0.13.4"  # Automatically updated by CI/CD pipeline during release
+VERSION = "v0.13.5"  # Automatically updated by CI/CD pipeline during release
 BANNER = f"""
 ╔═════════════════════════════════════════════════════════
 ║  PyADRecon {VERSION} - Python AD Reconnaissance Tool      
