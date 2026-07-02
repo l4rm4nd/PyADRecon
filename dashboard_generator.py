@@ -53,6 +53,14 @@ class DashboardGenerator:
         # Get generation timestamp
         generation_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
+        # Determine xlsx report filename relative to the dashboard output file
+        dashboard_dir = Path(self.output_file).parent
+        xlsx_candidates = sorted(dashboard_dir.glob("*-Report.xlsx"))
+        if xlsx_candidates:
+            xlsx_filename = xlsx_candidates[0].name
+        else:
+            xlsx_filename = "ADRecon-Report.xlsx"
+        
         html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -356,7 +364,7 @@ class DashboardGenerator:
                            title="View on GitHub">
                             <i class="fab fa-github"></i><span class="hidden sm:inline ml-1">GitHub</span>
                         </a>
-                        <a :href="'vulnad_local-Report.xlsx'" download
+                        <a href="{xlsx_filename}" download
                            class="px-3 py-2 sm:px-4 rounded-lg bg-green-600 text-white hover:bg-green-700 transition text-sm sm:text-base whitespace-nowrap">
                             <i class="fas fa-file-excel"></i> <span class="hidden sm:inline">Download </span>XLSX
                         </a>
@@ -3024,7 +3032,7 @@ class DashboardGenerator:
                 }},
                 
                 usersWithPasswordsInInfo() {{
-                    const pwdPatterns = /pass(?:w(?:or)?d)?[\\s:=]+[\\S]+|pwd[\\s:=]+[\\S]+/i;
+                    const pwdPatterns = /\b(pw|password|passwort|kennwort|initial|pwd|pass|secret|cred|credential)\b/i;
                     let filtered = this.users.filter(u => 
                         (u.Description && pwdPatterns.test(u.Description)) ||
                         (u.Info && pwdPatterns.test(u.Info))
