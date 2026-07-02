@@ -1,3 +1,10 @@
+## [0.13.5](https://github.com/l4rm4nd/PyADRecon/compare/v0.13.4...v0.13.5) (2026-07-02)
+
+
+### Bug Fixes
+
+* adjust dashboard generator ([8fd5a8b](https://github.com/l4rm4nd/PyADRecon/commit/8fd5a8bbc92c995cba1c49db84315974478b19c3)), closes [#6](https://github.com/l4rm4nd/PyADRecon/issues/6) [#7](https://github.com/l4rm4nd/PyADRecon/issues/7)
+
 ## [0.13.4](https://github.com/l4rm4nd/PyADRecon/compare/v0.13.3...v0.13.4) (2026-06-30)
 
 
@@ -25,11 +32,4 @@
 ### Bug Fixes
 
 * detect delegation findings ([90aea4e](https://github.com/l4rm4nd/PyADRecon/commit/90aea4ef264f2f6e124bb1a8fe4c123f1ea63192))
-
-## [0.13.0](https://github.com/l4rm4nd/PyADRecon/compare/v0.12.14...v0.13.0) (2026-02-22)
-
-
-### Features
-
-* paginated dashboard ([1ec081f](https://github.com/l4rm4nd/PyADRecon/commit/1ec081f906436060cede2ebed94854708e2a954c))
 
