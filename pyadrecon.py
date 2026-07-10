@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 """
 PyADRecon - Python Active Directory Reconnaissance Tool
@@ -603,6 +602,179 @@ def calculate_user_stats(users_data: List[Dict], password_age_days: int = 180, d
                     stats['categories'][cat]['disabled_count'] += 1
     
     return stats
+
+
+def get_os_eol_info(os_string: str) -> Dict[str, Any]:
+    """Return EOL status, EOL date, and days until/since EOL for a given OS string.
+
+    Returns a dict with keys: 'EOL Status', 'EOL Date', 'EOL Days Until/Since'.
+    All values are empty strings when the OS is not recognized.
+    """
+    BUILD_MAPPING = {
+        # Windows 11 builds
+        '22000': '21H2',
+        '22621': '22H2',
+        '22631': '23H2',
+        '26100': '24H2',
+        '26200': '25H2',
+        '28000': '26H1',
+        # Windows 10 builds
+        '10240': '1507',
+        '10586': '1511',
+        '14393': '1607',
+        '15063': '1703',
+        '16299': '1709',
+        '17134': '1803',
+        '17763': '1809',
+        '18362': '1903',
+        '18363': '1909',
+        '19041': '2004',
+        '19042': '20H2',
+        '19043': '21H1',
+        '19044': '21H2',
+        '19045': '22H2',
+    }
+
+    EOL_DATABASE = {
+        'Server 2003':      {'securityEnd': '2015-07-14'},
+        'Server 2008':      {'securityEnd': '2020-01-14'},
+        'Server 2008 R2':   {'securityEnd': '2020-01-14'},
+        'Server 2012':      {'securityEnd': '2023-10-10'},
+        'Server 2012 R2':   {'securityEnd': '2023-10-10'},
+        'Server 2016':      {'securityEnd': '2027-01-12'},
+        'Server 2019':      {'securityEnd': '2029-01-09'},
+        'Server 2022':      {'securityEnd': '2031-10-14'},
+        'Server 2025':      {'securityEnd': '2034-10-10'},
+        'XP':               {'securityEnd': '2014-04-08'},
+        'Vista':            {'securityEnd': '2017-04-11'},
+        '7':                {'securityEnd': '2020-01-14'},
+        '8':                {'securityEnd': '2016-01-12'},
+        '8.1':              {'securityEnd': '2023-01-10'},
+        '10-1507':          {'securityEnd': '2025-10-14'},
+        '10-1507-E-LTSC':   {'securityEnd': '2025-10-14'},
+        '10-1511':          {'securityEnd': '2017-10-10'},
+        '10-1607':          {'securityEnd': '2026-10-13'},
+        '10-1607-E-LTSC':   {'securityEnd': '2026-10-13'},
+        '10-1703':          {'securityEnd': '2019-10-08'},
+        '10-1709':          {'securityEnd': '2020-10-13'},
+        '10-1803':          {'securityEnd': '2021-05-11'},
+        '10-1809':          {'securityEnd': '2021-05-11'},
+        '10-1809-E-LTSC':   {'securityEnd': '2029-01-09'},
+        '10-1903':          {'securityEnd': '2020-12-08'},
+        '10-1909':          {'securityEnd': '2022-05-10'},
+        '10-2004':          {'securityEnd': '2021-12-14'},
+        '10-20H2':          {'securityEnd': '2023-05-09'},
+        '10-21H1':          {'securityEnd': '2022-12-13'},
+        '10-21H2':          {'securityEnd': '2024-06-11'},
+        '10-21H2-E-LTSC':   {'securityEnd': '2027-01-12'},
+        '10-22H2':          {'securityEnd': '2025-10-14'},
+        '11-21H2-Pro':      {'securityEnd': '2023-10-10'},
+        '11-21H2-Enterprise': {'securityEnd': '2024-10-08'},
+        '11-22H2-Pro':      {'securityEnd': '2024-10-08'},
+        '11-22H2-Enterprise': {'securityEnd': '2025-10-14'},
+        '11-23H2-Pro':      {'securityEnd': '2025-11-11'},
+        '11-23H2-Enterprise': {'securityEnd': '2026-11-10'},
+        '11-24H2-Pro':      {'securityEnd': '2026-10-13'},
+        '11-24H2-Enterprise': {'securityEnd': '2027-10-12'},
+        '11-25H2-Pro':      {'securityEnd': '2027-10-12'},
+        '11-25H2-Enterprise': {'securityEnd': '2028-10-10'},
+        'Ubuntu 16.04':     {'securityEnd': '2021-04-02'},
+        'Ubuntu 18.04':     {'securityEnd': '2023-05-31'},
+        'Ubuntu 20.04':     {'securityEnd': '2025-05-31'},
+        'Ubuntu 22.04':     {'securityEnd': '2027-04-01'},
+        'Debian 9':         {'securityEnd': '2020-07-18'},
+        'Debian 10':        {'securityEnd': '2022-09-10'},
+        'Debian 11':        {'securityEnd': '2024-08-14'},
+        'Debian 12':        {'securityEnd': '2026-06-10'},
+    }
+
+    empty = {'EOL Status': '', 'EOL Date': '', 'EOL Days Until/Since': ''}
+
+    if not os_string:
+        return empty
+
+    build_match = re.search(r'\((\d{5})\)', os_string)
+    build_number = build_match.group(1) if build_match else None
+    version = BUILD_MAPPING.get(build_number) if build_number else None
+
+    eol_key = None
+
+    if re.search(r'Windows Server 2003', os_string, re.IGNORECASE):
+        eol_key = 'Server 2003'
+    elif re.search(r'Windows Server 2008 R2', os_string, re.IGNORECASE):
+        eol_key = 'Server 2008 R2'
+    elif re.search(r'Windows Server 2008(?! R2)', os_string, re.IGNORECASE):
+        eol_key = 'Server 2008'
+    elif re.search(r'Windows Server 2012 R2', os_string, re.IGNORECASE):
+        eol_key = 'Server 2012 R2'
+    elif re.search(r'Windows Server 2012(?! R2)', os_string, re.IGNORECASE):
+        eol_key = 'Server 2012'
+    elif re.search(r'Windows Server 2016', os_string, re.IGNORECASE):
+        eol_key = 'Server 2016'
+    elif re.search(r'Windows Server 2019', os_string, re.IGNORECASE):
+        eol_key = 'Server 2019'
+    elif re.search(r'Windows Server 2022', os_string, re.IGNORECASE):
+        eol_key = 'Server 2022'
+    elif re.search(r'Windows Server 2025', os_string, re.IGNORECASE):
+        eol_key = 'Server 2025'
+    elif re.search(r'Windows 11', os_string, re.IGNORECASE) and version:
+        is_enterprise = bool(re.search(r'Enterprise', os_string, re.IGNORECASE))
+        edition = 'Enterprise' if is_enterprise else 'Pro'
+        eol_key = f'11-{version}-{edition}'
+    elif re.search(r'Windows 10', os_string, re.IGNORECASE) and version:
+        is_enterprise = bool(re.search(r'Enterprise', os_string, re.IGNORECASE))
+        is_ltsc = bool(re.search(r'LTSC', os_string, re.IGNORECASE))
+        eol_key = f'10-{version}-E-LTSC' if (is_enterprise and is_ltsc) else f'10-{version}'
+    elif re.search(r'Windows XP', os_string, re.IGNORECASE):
+        eol_key = 'XP'
+    elif re.search(r'Windows Vista', os_string, re.IGNORECASE):
+        eol_key = 'Vista'
+    elif re.search(r'Windows 7', os_string, re.IGNORECASE):
+        eol_key = '7'
+    elif re.search(r'Windows 8\.1', os_string, re.IGNORECASE):
+        eol_key = '8.1'
+    elif re.search(r'Windows 8(?!\.1)', os_string, re.IGNORECASE):
+        eol_key = '8'
+    elif re.search(r'Ubuntu.*16\.04', os_string, re.IGNORECASE):
+        eol_key = 'Ubuntu 16.04'
+    elif re.search(r'Ubuntu.*18\.04', os_string, re.IGNORECASE):
+        eol_key = 'Ubuntu 18.04'
+    elif re.search(r'Ubuntu.*20\.04', os_string, re.IGNORECASE):
+        eol_key = 'Ubuntu 20.04'
+    elif re.search(r'Ubuntu.*22\.04', os_string, re.IGNORECASE):
+        eol_key = 'Ubuntu 22.04'
+    elif re.search(r'Debian.*9', os_string, re.IGNORECASE):
+        eol_key = 'Debian 9'
+    elif re.search(r'Debian.*10', os_string, re.IGNORECASE):
+        eol_key = 'Debian 10'
+    elif re.search(r'Debian.*11', os_string, re.IGNORECASE):
+        eol_key = 'Debian 11'
+    elif re.search(r'Debian.*12', os_string, re.IGNORECASE):
+        eol_key = 'Debian 12'
+
+    if eol_key is None or eol_key not in EOL_DATABASE:
+        return empty
+
+    security_end_str = EOL_DATABASE[eol_key]['securityEnd']
+    security_end = datetime.strptime(security_end_str, '%Y-%m-%d')
+    now = datetime.now()
+    twelve_months_from_now = now + timedelta(days=365)
+
+    if now > security_end:
+        eol_status = 'EoL'
+        days_diff = (now - security_end).days
+    elif security_end <= twelve_months_from_now:
+        eol_status = 'Soon EoL'
+        days_diff = -((security_end - now).days)
+    else:
+        eol_status = 'Supported'
+        days_diff = -((security_end - now).days)
+
+    return {
+        'EOL Status': eol_status,
+        'EOL Date': security_end_str,
+        'EOL Days Until/Since': days_diff,
+    }
 
 
 def calculate_computer_stats(computers_data: List[Dict], laps_data: List[Dict] = None, password_age_days: int = 30, dormant_days: int = 90) -> Dict[str, Any]:
@@ -3081,6 +3253,8 @@ class PyADRecon:
                     ipv4_address = hostname_to_ip.get(hostname_part, '')
                     ipv6_address = hostname_to_ipv6.get(hostname_part, '')
 
+                eol_info = get_os_eol_info(os_full)
+
                 results.append({
                     "UserName": get_attr(entry, 'sAMAccountName', ''),
                     "Name": get_attr(entry, 'name', ''),
@@ -3089,6 +3263,9 @@ class PyADRecon:
                     "IPv4Address": ipv4_address,
                     "IPv6Address": ipv6_address,
                     "Operating System": os_full,
+                    "EOL Status": eol_info['EOL Status'],
+                    "EOL Date": eol_info['EOL Date'],
+                    "EOL Days Until/Since": eol_info['EOL Days Until/Since'],
                     "Logon Age (days)": logon_age_days,
                     "Password Age (days)": pwd_age_days,
                     f"Dormant (> {self.config.dormant_days} days)": dormant,
@@ -5594,6 +5771,7 @@ class PyADRecon:
                 # Critical security issues (RED)
                 red_columns = {
                     "Delegation Type": ("Unconstrained", "Unconstrained"),
+                    "EOL Status": ("EoL", "EoL"),
                 }
                 
                 # Medium security issues (ORANGE)
@@ -5639,6 +5817,21 @@ class PyADRecon:
                             cell = ws.cell(row=row_idx, column=headers[col_name])
                             if cell.value in [True, "TRUE"]:
                                 cell.fill = yellow_fill
+                    
+                    # EOL Status: Soon EoL — orange if < 180 days until EoL, yellow otherwise
+                    if "EOL Status" in headers and "EOL Days Until/Since" in headers:
+                        eol_status_cell = ws.cell(row=row_idx, column=headers["EOL Status"])
+                        if eol_status_cell.value == "Soon EoL":
+                            days_cell = ws.cell(row=row_idx, column=headers["EOL Days Until/Since"])
+                            try:
+                                days_val = int(days_cell.value)
+                            except (TypeError, ValueError):
+                                days_val = None
+                            # days_val is negative (future) for Soon EoL; abs < 180 → orange
+                            if days_val is not None and abs(days_val) < 180:
+                                eol_status_cell.fill = orange_fill
+                            else:
+                                eol_status_cell.fill = yellow_fill
                     
                     # Special: Gray out entire row for disabled computers (after other formatting)
                     if is_disabled:
@@ -6458,7 +6651,28 @@ class PyADRecon:
                         cat_total,
                         total_pct
                     ])
-            
+
+                # EOL Summary section
+                computer_stats_ws.append([])
+                eol_heading_cell = WriteOnlyCell(computer_stats_ws, value="EOL Summary")
+                eol_heading_cell.font = Font(bold=True, size=12)
+                computer_stats_ws.append([eol_heading_cell])
+                computer_stats_ws.append([])
+
+                eol_header_row = []
+                for header in ["EOL Status", "Count", "Percentage"]:
+                    cell = WriteOnlyCell(computer_stats_ws, value=header)
+                    cell.font = header_font
+                    cell.fill = header_fill
+                    cell.alignment = left_alignment
+                    eol_header_row.append(cell)
+                computer_stats_ws.append(eol_header_row)
+
+                eol_stats = computer_stats.get('eol_stats', {})
+                for label, count in eol_stats.items():
+                    pct = f"{(count / total_count * 100):.1f}%" if total_count > 0 else "0.0%"
+                    computer_stats_ws.append([label, count, pct])
+
             # Order sheets according to SHEET_ORDER, then add any remaining
             # (excluding AboutPyADRecon since it was already created first)
             ordered_names = []
@@ -7035,6 +7249,27 @@ def generate_excel_from_csv(csv_dir: str, output_file: str = None):
                     cat_total,
                     total_pct
                 ])
+
+            # EOL Summary section
+            computer_stats_ws.append([])
+            eol_heading_cell = WriteOnlyCell(computer_stats_ws, value="EOL Summary")
+            eol_heading_cell.font = Font(bold=True, size=12)
+            computer_stats_ws.append([eol_heading_cell])
+            computer_stats_ws.append([])
+
+            eol_header_row = []
+            for header in ["EOL Status", "Count", "Percentage"]:
+                cell = WriteOnlyCell(computer_stats_ws, value=header)
+                cell.font = header_font
+                cell.fill = header_fill
+                cell.alignment = left_alignment
+                eol_header_row.append(cell)
+            computer_stats_ws.append(eol_header_row)
+
+            eol_stats = computer_stats.get('eol_stats', {})
+            for label, count in eol_stats.items():
+                pct = f"{(count / total_count * 100):.1f}%" if total_count > 0 else "0.0%"
+                computer_stats_ws.append([label, count, pct])
 
         # Process each CSV file (excluding AboutPyADRecon as it was already created)
         remaining_csv_files = [f for f in csv_files if f != 'AboutPyADRecon.csv']
