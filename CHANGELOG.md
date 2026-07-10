@@ -1,3 +1,10 @@
+## [0.13.7](https://github.com/l4rm4nd/PyADRecon/compare/v0.13.6...v0.13.7) (2026-07-10)
+
+
+### Bug Fixes
+
+* add eol to computers and stats ([50a4fb0](https://github.com/l4rm4nd/PyADRecon/commit/50a4fb09c48155bab03bc880cc7e93a3bdbf29bc))
+
 ## [0.13.6](https://github.com/l4rm4nd/PyADRecon/compare/v0.13.5...v0.13.6) (2026-07-09)
 
 
@@ -25,11 +32,4 @@
 ### Bug Fixes
 
 * add EOL systemd detection ([81bdb7f](https://github.com/l4rm4nd/PyADRecon/commit/81bdb7f516a3023af08b7cab2be3b6242d68c174))
-
-## [0.13.2](https://github.com/l4rm4nd/PyADRecon/compare/v0.13.1...v0.13.2) (2026-02-22)
-
-
-### Bug Fixes
-
-* rework Foreign Security Principals in Privileged Groups ([50fe76e](https://github.com/l4rm4nd/PyADRecon/commit/50fe76e8674a79a84678947fde3d488a73e2f383))
 
